@@ -11,6 +11,7 @@ DmxBuffer {
 	// classvars
 	classvar x = 0;
 	
+	// some change...
 	
 	// instance vars
 	var buffer;
