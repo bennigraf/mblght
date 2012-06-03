@@ -43,7 +43,7 @@ Patcher {
 			("Patcher "++myid++" talking!").postln;
 		}, '/'++myid));
 		oscfuncs.add(OSCFunc.newMatching({ |msg| this.devicesMsg(msg) }, '/'++myid++'/devices'));
-		oscfuncs.add(OSCFunc.newMatching(this.groupsMsg(), '/'++myid++'/groups'));
+		oscfuncs.add(OSCFunc.newMatching({ |msg| this.groupsMsg(msg) }, '/'++myid++'/groups'));
 	}
 	
 	addBuffer { |buffer|
@@ -74,41 +74,44 @@ Patcher {
 /*	devices {*/
 		
 /*	}*/
-	removeDevice { |device|
-		
+	removeDevice { |index|
+		devices.removeAt(index);
 	}
 	
 	addGroup { |groupname|
-		
+		if(groups.at(groupname.asSymbol).isNil, {
+			groups.put(groupname.asSymbol, List());
+		});
 	}
 /*	groups {*/
 		
 /*	}*/
 	removeGroup { |group|
-		
+		if(group.isKindOf(Symbol), {
+			groups.removeAt(groups.find([group]));
+		});
+		if(group.isKindOf(Integer), {
+			groups.removeAt(group);
+		});
+	}
+	addDeviceToGroup { |device, group|
+		groups[group].add(device);
+	}
+	removeDeviceFromGroup { |device, group|
+		groups[group].removeAt(group);
 	}
 	
 	
 	message { |msg|
 		// dispatches message, calls methods on devices, sends dmx data to buffer 
 		// possible message addresses:
-		//   group: /group/{method} - call method on each device in group
-		//   group: /group/{n}/{method} - call method on {n}'th device in group
-		//   device: /devices/{method} - call method on every deivce in patcher (which supports this specific method)
-		//   device: /devices/{n}/{method} - call method on {n}'th device in patcher
+		//   group: /{patcher}/group {method} - call method on each device in group
+		//   group: /{patcher}/group {n} {method} - call method on {n}'th device in group
+		//   device: /{patcher}/devices {method} - call method on every deivce in patcher (which supports this specific method)
+		//   device: /{patcher}/devices {n} {method} - call method on {n}'th device in patcher
 		//   patcher: /{method} - call method on every device in patcher, same as /device/{method}
-		var message = msg.split; // split takes / as defalt...
-		
-		if(message[0] == "devices", {
-/*			this.deviceMsg(message);*/
-		});
-		if(message[0].inGroups, {
-/*			this.groupMsg(message[0], messages);*/
-		})
-/*		"/ring/13/color 0.1 0.8 1".split*/
-		// on each device:
-/*		buffer.set(device.address, device.getDmx)*/
-/*		buffer.set()...*/
+
+		// nope, doing osc...
 	}
 	
 	// basically OSCFunc callbacks... get: msg, time, addr, and recvPort
@@ -130,11 +133,36 @@ Patcher {
 			}, {
 				"device doesn't exist in patcher!".postln;
 			});
+		}, { // else: method called on all devices
+			var method = msg[1];
+			var arguments = List();
+			(msg.size-2).do({ |i|
+				arguments.add(msg[i + 2]);
+			});
+			devices.do({ |device, i|
+				if(device.hasMethod(method), {
+					device.action(method, arguments);
+					this.setBuffers(device.getDmx, device.address);
+				});
+			});
 		});
 	}
 	
 	groupsMsg {|msg, time, addr, recvPort|
 /*		msg.postln;*/
+		var group = msg[1];
+		var groupDevs = groups[group];
+		var method = msg[2];
+		var arguments = List();
+		(msg.size-3).do({ |i|
+			arguments.add(msg[i + 3]);
+		});
+		groupDevs.do({|dev, i|
+			if(dev.hasMethod(method), {
+				dev.action(method, arguments);
+				this.setBuffers(dev.getDmx, dev.address);
+			});
+		});
 	}
 	
 }
@@ -207,6 +235,11 @@ Device {
 			"method not found!".postln;
 		});
 	}
+	
+	hasMethod { |method|
+		var def = types.at(type);
+		^def.at(method.asSymbol).notNil;
+	}
 }
 
 /*
@@ -239,18 +272,9 @@ Device.addType(\rgbpar, (
 ));
 )
 */
-/*
-Device.types
-d = Device(\rgbpar, 17)
-d.dump
-d.dmxData
-d.setDmx(0, 188)
-Device.types.at(\rgbpar).at(\channels)
-*/
-
 
 /*
-// later I say:
+// later I would say:
 p = Patcher();
 p.addDevice(Device(\rgbpar), 17); // 17 is the starting address of the rgbpar I add here...
 p.addGroup('ring'); // creates a 'ring'

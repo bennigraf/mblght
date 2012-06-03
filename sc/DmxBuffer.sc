@@ -45,6 +45,9 @@ DmxBuffer {
 	addDevice { |device|
 		devices.add(device);
 	}
+	removeDevice { |index|
+		devices.removeAt(index);
+	}
 	devices { 
 		^devices;
 	}
@@ -190,12 +193,11 @@ RainbowSerial {
 	}
 	
 	send { |buffer|		
-		var fbuf = Int8Array.newClear(192); // buffer data here to convert to 8bit...
-		var outData = Int8Array.newClear(192);
+		var fbuf = Array.fill(192, 0); // buffer data here to convert to 8bit...
+		var outData = Array.fill(192, 0);
 		var realOutData = Int8Array.newClear(96);
 		var byte1, byte2;
 		var index = 0; // needed as manual counter...
-		
 		buffer.do({ |obj, i|
 			if(i < 192, {
 				fbuf[i] = obj;
@@ -217,6 +219,12 @@ RainbowSerial {
 			byte2 = (outData[i*2+1].abs / 16).floor.asInteger; // lsb
 			realOutData[i] = (byte1 | byte2); // whew, that blew my mind...
 		});
+		
+		24.do({ |i|
+/*			(i.asString ++":" + fbuf[i]).postln;*/
+/*			(i.asString ++":" + outData[i]).postln;*/
+		});
+		
 		
 		// finally, put to port...
 		if(sp.notNil, {
