@@ -46,6 +46,7 @@ DmxBuffer {
 		devices.add(device);
 	}
 	removeDevice { |index|
+		devices[index].close;
 		devices.removeAt(index);
 	}
 	devices { 
@@ -218,11 +219,6 @@ RainbowSerial {
 			byte1 = (outData[i*2].abs / 16).floor.asInteger << 4; // msb
 			byte2 = (outData[i*2+1].abs / 16).floor.asInteger; // lsb
 			realOutData[i] = (byte1 | byte2); // whew, that blew my mind...
-		});
-		
-		24.do({ |i|
-/*			(i.asString ++":" + fbuf[i]).postln;*/
-/*			(i.asString ++":" + outData[i]).postln;*/
 		});
 		
 		

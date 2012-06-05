@@ -23,3 +23,27 @@ SynthDef(\foobar, { |out=0|
 )
 ~s2 = Synth(\foobar);
 ~s2.free
+
+b = Bus.control(s)
+b.getSynchronous
+
+Tdef(\rout, {
+	loop {
+		b.getSynchronous.postln;
+		0.1.wait;
+	}
+}).play
+
+
+Ndef(\xo, {SinOsc.kr});
+Ndef(\xo).play(b);
+Ndef(\xo)[1] = \filter -> {|in| in * SinOsc.ar(0.1)}
+Ndef(\xo).stop
+Ndef(\xo).clear
+
+n.clear
+n = NodeProxy.audio(s, 1)
+n.source = { Silent.ar + 2 }
+n[2] = \filter -> {|in| in * SinOsc.ar(1).clip(0, 1)}
+n[4] = \filter -> {|in| Out.kr(b, in)}
+n.play(b)

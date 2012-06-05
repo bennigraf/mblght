@@ -178,6 +178,17 @@ Device {
 	var <>type;
 	var <>dmxData;
 	
+	*initClass {
+		// load some default devices on class instantiation
+		Device.addType(\smplrgbpar, (
+			channels: 3,
+			color: { |args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				[[0, args[0]], [1, args[1]], [2, args[2]]];
+			}
+		));
+	}
+	
 	*new { |type, address = 0|
 		^super.new.init(type, address);
 	}

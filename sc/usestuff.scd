@@ -97,7 +97,7 @@ t[13] = 7
 d = DmxBuffer.new();
 r = RainbowSerial();
 r = RainbowSerial(3)
-r.send(List.newUsing([0, 0, 200, 255]))
+r.send(List.newUsing([0, 0, 255, 255, 0, 0, 0, 255]))
 r.close
 
 d.addDevice(r);
@@ -155,8 +155,10 @@ s.dumpOSC(false)
 
 ////// use actual stuff
 d = DmxBuffer.new();
+d.fps = 5
 r = RainbowSerial(3);
 d.addDevice(r);
+d.removeDevice(0)
 
 (
 Device.addType(\smplrgbpar, (
@@ -172,12 +174,10 @@ p.addBuffer(d);
 n = NetAddr("localhost", 57120);
 
 (
-7.do({ |i|
-	p.addDevice(Device(\smplrgbpar, i * 3));
-	p.addDevice(Device(\smplrgbpar, 7*3 + (8 * 3 * i)));
-	p.addDevice(Device(\smplrgbpar, 189 - (i * 3)));
-	p.addDevice(Device(\smplrgbpar, 189 - (7 * 3) - (i * (8*3))));
-});
+7.do({ |i| p.addDevice(Device(\smplrgbpar, i * 3)); });
+7.do({ |i| p.addDevice(Device(\smplrgbpar, 7*3 + (8 * 3 * i))); });
+7.do({ |i| p.addDevice(Device(\smplrgbpar, 189 - (i * 3))); });
+7.do({ |i| p.addDevice(Device(\smplrgbpar, 189 - (7 * 3) - (i * (8*3)))); });
 )
 
 (
@@ -185,7 +185,7 @@ t = Task({
 	var clr = {255.rand}!3;
 	28.do({ |j|
 		n.sendMsg('/stage/devices', j, 'color', clr[0], clr[1], clr[2]);
-		0.03.wait;
+		0.1.wait;
 	});
 });
 t.play
