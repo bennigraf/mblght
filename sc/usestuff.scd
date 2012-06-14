@@ -155,7 +155,7 @@ s.dumpOSC(false)
 
 ////// use actual stuff
 d = DmxBuffer.new();
-d.fps = 5
+d.fps = 20
 r = RainbowSerial(3);
 d.addDevice(r);
 d.removeDevice(0)
@@ -198,6 +198,7 @@ p.devices.do({|dev, i|
 	p.addDeviceToGroup(dev, \ring);
 });
 
+
 Tdef(\test1, {
 	inf.do({
 		n.sendMsg('/stage/devices', 'color', 155, 55, 123);
@@ -231,3 +232,55 @@ t.stop
 	n.sendMsg('/stage/devices', j, 'color', 0, 0, 0);
 })
 
+// simple messaging
+
+d = DmxBuffer.new();
+d.fps = 50
+
+o = OlaPipe();
+
+d.addDevice(o);
+
+p = Patcher(\stage);
+p.addBuffer(d);
+
+(
+64.do({ |i|
+	p.addDevice(Device(\smplrgbpar, i * 3));
+})
+)
+
+p.addGroup(\ring)
+p.devices.do({|dev, i|
+	p.addDeviceToGroup(dev, \ring);
+});
+
+(
+p.message((
+/*	group: \ring,*/
+/*	device: (1,3..64),*/
+	method: \color,
+	data: [255, 133, 255]
+));
+)
+
+
+(
+t = Task({
+	var num = 64;
+	inf.do({ |i|
+		num.do({ |j|
+			var r, g, b;
+			r = ((i/10 + (pi/num * (j+(num/3 * 2)))).sin.abs * 255);
+			g = ((i/10 + (pi/num * (j+(num/3 * 1)))).sin.abs * 255);
+			b = ((i/10 + (pi/num * j)).sin.abs * 255);
+/*			['/stage/devices', j, 'color', 0, 0, ((i/50 + (j * 8)).sin.abs * 200).asInteger].postln;*/
+/*			n.sendMsg('/stage/devices', j, 'color', r.asInteger, g.asInteger, b.asInteger);*/
+			p.message((device: j, method: \color, data: [r.asInteger, g.asInteger, b.asInteger]));
+		});
+		(1/20).wait;
+	})
+});
+)
+t.play
+t.stop

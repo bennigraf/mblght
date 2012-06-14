@@ -22,7 +22,7 @@ Patcher {
 	var <id;
 	var buffers; // holds DMXBuffer objects
 	var oscfuncs;
-	
+	var <busses;
 	
 	*new { |id|
 		^super.new.init(id);
@@ -32,6 +32,8 @@ Patcher {
 		devices = List();
 		groups = IdentityDictionary();
 		buffers = List();
+		busses = List();
+		
 		if(myid.isKindOf(Symbol).not, {
 			"ID must be a symbol!".postln;
 			^nil;
@@ -39,11 +41,14 @@ Patcher {
 		id = myid;
 		oscfuncs = List();
 		
+		// deprecate osc functionality for now...
+		/*
 		oscfuncs.add(OSCFunc.newMatching({
 			("Patcher "++myid++" talking!").postln;
 		}, '/'++myid));
 		oscfuncs.add(OSCFunc.newMatching({ |msg| this.devicesMsg(msg) }, '/'++myid++'/devices'));
 		oscfuncs.add(OSCFunc.newMatching({ |msg| this.groupsMsg(msg) }, '/'++myid++'/groups'));
+		*/
 	}
 	
 	addBuffer { |buffer|
@@ -101,6 +106,14 @@ Patcher {
 		groups[group].removeAt(group);
 	}
 	
+	numDevices { |group = nil|
+		if(group.isNil, {
+			^devices.size;
+		}, {
+			^groups[group].size;
+		});
+	}
+	
 	
 	message { |msg|
 		// dispatches message, calls methods on devices, sends dmx data to buffer 
@@ -110,11 +123,65 @@ Patcher {
 		//   device: /{patcher}/devices {method} - call method on every deivce in patcher (which supports this specific method)
 		//   device: /{patcher}/devices {n} {method} - call method on {n}'th device in patcher
 		//   patcher: /{method} - call method on every device in patcher, same as /device/{method}
-
-		// nope, doing osc...
+		/*
+		 * OR:
+		 * event-messages:
+		msg = (
+			group: \ring,
+			method: \color,
+			data: [24, 34, 12]
+		);
+		e = ()
+		e[\play].def.sourceCode
+		
+		Patcher.message(msg); => dispatch to group/device, call often!
+		
+		*/
+		if(msg[\group] != nil, {
+/*			"make group message".postln;*/
+			this.groupsMsgEvent(msg);
+		}, {
+			// otherwise make device message, which calls message on all devices if none is given
+/*			"make device message".postln;*/
+			this.devicesMsgEvent(msg);
+		});
+		
+	}
+	
+	devicesMsgEvent { |msg, deviceList = nil|
+		var deviceNums = msg[\device]; // can be array...
+		var method = msg[\method];
+		var data = msg[\data];
+		
+		// 'default' device list are the devices of the patcher
+		if(deviceList == nil, {
+			deviceList = devices;
+		});
+		
+		if(deviceNums == nil, {
+			// apply to all devices in patcher
+			deviceNums = (0..(deviceList.size-1))
+		});
+		if(deviceNums.isKindOf(Array).not, {
+			deviceNums = [deviceNums];
+		});
+		deviceNums.do({ |num, i|
+			if(deviceList[num % deviceList.size].hasMethod(method), {
+				// wrap devices index, just to be sure...
+				deviceList[num % deviceList.size].action(method, data);
+				this.setBuffers(deviceList[num%deviceList.size].getDmx, deviceList[num%deviceList.size].address);
+			});
+		});
+	}
+	groupsMsgEvent { |msg|
+		// reroute call to devicesmsgevent, but with 'filtered' list of devices...
+		var group = msg[\group];
+		var groupDevices = groups[group];
+		this.devicesMsgEvent(msg, groupDevices);
 	}
 	
 	// basically OSCFunc callbacks... get: msg, time, addr, and recvPort
+	// a little deprecated!
 	devicesMsg { |msg, time, addr, recvPort|
 		// msg[0] is address, msg[1] and following are arguments
 /*		msg.postln;*/
@@ -165,131 +232,67 @@ Patcher {
 		});
 	}
 	
-}
-
-
-/*
-	Provides methods to use devices without knowing their exact addresses...
-	holds it's own little buffer for it's own dmx data, accessible via setDmx, info gets called from patcher
- */
-Device {	
-	classvar types; // holds different types of devices
-	var <>address = 0;
-	var <>type;
-	var <>dmxData;
 	
-	*initClass {
-		// load some default devices on class instantiation
-		Device.addType(\smplrgbpar, (
-			channels: 3,
-			color: { |args|
-				// return list with dmx slots/addresses (starting from 0 for this device) and values
-				[[0, args[0]], [1, args[1]], [2, args[2]]];
-			}
-		));
-	}
+	// now a patcher gets NodeProxys registered for methods. Those NodeProxy should play out
+	// .kr signals, whose values are being used to call the registered methods on the certain
+	// device or group of devices.
+	// Since a method might require multiple arguments, multichannel busses are needed. There
+	// is no way of having actual groups of busses or something like that, so there must be 
+	// arguments * channels busses available (in case there are different values for different 
+	// devices). The devices wrap around the available devices in any certain group.
 	
-	*new { |type, address = 0|
-		^super.new.init(type, address);
-	}
-	init { | type, address = 0 |
-		var channels;
-		this.address = address;
-		this.type = type;
-		channels = types[type][\channels];
-		this.dmxData = List.newClear(channels).fill(0);
-	}
+	// Or: a patcher registers busses for methods. Then NodeProxys need to play to those busses.
+	// (A NodeProxy with Out.kr appareantly doesn't even create it's own private bus, see NP.busLoaded.)
 	
-	*addType { |title, definition| 
-		if(types.isNil, {
-			types = IdentityDictionary();
-		});
-		if(title.isKindOf(Symbol).not, {
-			"Give a symbol as device title!".postln;
+	makeBusForMethod { |method, numArgs = 1, group = nil, channels = 1|
+		
+		var bus = (); // bus proto...
+		var s = Server.default;
+		// how do I get the number of arguments for a method??? I don't! => numArgs...
+		
+		if(s.pid == nil, {
+			"Boot server first!!".postln;
 			^false;
 		});
-		if(definition.isKindOf(Event).not, {
-			"Give an event as definition...".postln;
-			^false;
+		
+		if(group.notNil, {
+			bus.group = group;
 		});
-		types.put(title.asSymbol, definition);
-		// give default channel count...
-		if(definition.at(\channels)==nil, {
-			types.at(title.asSymbol)[\channels] = 1;
-		});
-	}
-	*types {
-		if(types.isNil, {
-			types = IdentityDictionary();
-		});
-		^types;
-	}
-	
-	setDmx { |addr, value|
-		// set dmx data locally! use internal mini pseudo buffer
-		dmxData[addr] = value;
-	}
-	getDmx {
-		^dmxData;
-	}
-	
-	action { |method, arguments|
-		// get type definition wiht methods from global type dictionary stored in classvar types
-		var def = types.at(type);
-		if(def.at(method.asSymbol).notNil, {
-			var tmpDmxData = def.at(method.asSymbol).value(arguments);
-/*			("calling method "++method).postln;*/
-			tmpDmxData.do({ |chan|
-				this.setDmx(chan[0], chan[1]);
+		
+		bus.numArgs = numArgs;
+		bus.channels = channels; // notice that bus.channels != bus.bus.numChannels, the latter is channels*numArgs!
+		bus.method = method;
+		
+		bus.bus = Bus.control(s, numArgs * channels);
+		
+		bus.routine = Routine.run({
+			var busdata;
+			var message = ();
+			inf.do({
+				message[\method] = bus.method;
+				if(bus.group.notNil, {
+					message[\group] = group;
+				});
+				// wrap around things? hmmm...
+				// if there is 1 channel, call on any device. if there are >1 channels, call on 
+				// each device 
+				if(bus.channels == 1, {
+					// bus contains only data for 1 channel so it also must be numArgs big...
+					message[\data] = bus.bus.getSynchronous;
+					this.message(message);
+				}, {
+					// for each device get data from bus (!offset!), wrap bus channels...
+					busdata = bus.bus.getSynchronous; // .getnAt doesn't exist...
+					this.numDevices(bus.group).do({ |i|
+						var offset = i*bus.numArgs;
+						message[\device] = i;
+						// wrapAt with an array gives array of values at indizies given by array
+						message[\data] = busdata.wrapAt((offset..(offset+numArgs-1)));
+						this.message(message);
+					});
+				});
+				(1/30).wait;
 			});
-		}, {
-			"method not found!".postln;
 		});
 	}
-	
-	hasMethod { |method|
-		var def = types.at(type);
-		^def.at(method.asSymbol).notNil;
-	}
 }
-
-/*
-	Example for definition of device. Implement osc methods by setting right values to the right dmx channels.
-		addr is used as starting address of device here.
-		TODO: scaling of values?
- */
-
-/*
-(
-Device.addType(\rgbpar, (
-	channels: 5,
-	color: { |args|
-//		var r = args[0];
-//		var g = args[1];
-//		var b = args[2];
-//		this.setDmx(addr, r);
-//		this.setDmx(addr+1, g);
-//		this.setDmx(addr+2, b);
-		// return list with dmx slots/addresses (starting from 0 for this device) and values
-		[[0, args[0]], [1, args[1]], [2, args[2]]];
-	},
-	strobe: { |onoff|
-		if(onoff == "on", {
-			this.setDmx(this.addr+4, 255);
-		}, {
-			this.setDmx(this.addr+4, 0);
-		})
-	}
-));
-)
-*/
-
-/*
-// later I would say:
-p = Patcher();
-p.addDevice(Device(\rgbpar), 17); // 17 is the starting address of the rgbpar I add here...
-p.addGroup('ring'); // creates a 'ring'
-p.addToGroup('ring', p.devices[0]); // add first device to group ring
-p.message('/ring/0/color 255 0 0');
-
-*/
