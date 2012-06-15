@@ -136,14 +136,15 @@ OlaPipe {
 	Use Pipe to connect to olad and send data (using the .send method called by DmxBuffer)
 	*/
 	var pathToBin = "/usr/local/bin/ola_streaming_client";
-	var <>universe = 0;
+	var <universe = 0;
 	var pipe;
 	
-	*new {
-		^super.new.init();
+	*new { | myUniverse = 0|
+		^super.new.init(myUniverse);
 	}
 	
-	init {
+	init { | myUniverse = 0 |
+		universe = myUniverse;
 		pipe = Pipe(pathToBin ++ " -u " ++ universe, "w");
 	}
 	close {

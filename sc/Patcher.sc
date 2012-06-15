@@ -67,14 +67,23 @@ Patcher {
 		// add device to internal list of devices
 		// register OSC path/address/methods? Or pass methods to Device... better not, otherwise 
 		//   I have 5 methods for each device in memory... => call methods when device gets called!
+		
+		var deviceNum;
 		devices.add(device);
+		deviceNum = devices.size - 1;
 		
 		if(group.notNil, {
-			if(groups.at(group).isNil, {
+			if(groups[group].isNil, {
 				groups.put(group, List());
 			});
-			groups.at(group).add(device);
+			groups[group].add(device);
 		});
+		
+		// call init message as default...
+		this.message((
+			device: deviceNum,
+			method: \init
+		));
 	}
 /*	devices {*/
 		
@@ -152,7 +161,7 @@ Patcher {
 		var deviceNums = msg[\device]; // can be array...
 		var method = msg[\method];
 		var data = msg[\data];
-		
+
 		// 'default' device list are the devices of the patcher
 		if(deviceList == nil, {
 			deviceList = devices;
@@ -256,7 +265,7 @@ Patcher {
 		});
 		
 		if(group.notNil, {
-			bus.group = group;
+			bus[\group] = group;
 		});
 		
 		bus.numArgs = numArgs;
@@ -278,11 +287,12 @@ Patcher {
 				// each device 
 				if(bus.channels == 1, {
 					// bus contains only data for 1 channel so it also must be numArgs big...
-					message[\data] = bus.bus.getSynchronous;
+					message[\data] = bus.bus.getnSynchronous;
+					message.postln;
 					this.message(message);
 				}, {
 					// for each device get data from bus (!offset!), wrap bus channels...
-					busdata = bus.bus.getSynchronous; // .getnAt doesn't exist...
+					busdata = bus.bus.getnSynchronous; // .getnAt doesn't exist...
 					this.numDevices(bus.group).do({ |i|
 						var offset = i*bus.numArgs;
 						message[\device] = i;
@@ -294,5 +304,9 @@ Patcher {
 				(1/30).wait;
 			});
 		});
+		
+		// add bus to bus-dictionary
+		busses.add(bus);
+		
 	}
 }

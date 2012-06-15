@@ -20,6 +20,74 @@ Device {
 				self.setDmx(2, (args[2] * 255).round.asInteger);
 			}
 		));
+		Device.addType(\robeCw1200E, (
+			channels: 17,
+			init: { |self|
+				// pan/tilt center:
+				self.setDmx(0, 127);
+				self.setDmx(2, 127);
+				// shutter open:
+				self.setDmx(15, 255);
+				// white/poweron/intensity:
+				self.setDmx(16, 255);
+			},
+			color: { |self, rgb|
+				// rgb 2 cmyk:
+				var cmyk = [0, 0, 0, 0];
+				
+				/*
+				// taken from horrible js-sourcecode at http://www.rechnr.de/farbenrechner
+				// doesn't work as expected!!
+				cmyk[0] = 1 - rgb[0];
+				cmyk[1] = 1 - rgb[1];
+				cmyk[2] = 1 - rgb[2];
+				
+				cmyk[3] = 1;
+				if(cmyk[0] < cmyk[3], { cmyk[3] = cmyk[0] });
+				if(cmyk[1] < cmyk[3], { cmyk[3] = cmyk[1] });
+				if(cmyk[2] < cmyk[3], { cmyk[3] = cmyk[2] });
+				
+				if(cmyk[3] == 1, { // black?
+					cmyk[0] = 0; cmyk[1] = 0; cmyk[2] = 0;
+				}, {
+					cmyk[0] = (cmyk[0] - cmyk[3]) / (1 - cmyk[3]);
+					cmyk[1] = (cmyk[1] - cmyk[3]) / (1 - cmyk[3]);
+					cmyk[2] = (cmyk[2] - cmyk[3]) / (1 - cmyk[3]);
+				});
+				*/
+				
+				// another try: http://stackoverflow.com/questions/2426432/convert-rgb-color-to-cmyk
+				//Black   = minimum(1-Red,1-Green,1-Blue)
+				//Cyan    = (1-Red-Black)/(1-Black)
+				//Magenta = (1-Green-Black)/(1-Black)
+				//Yellow  = (1-Blue-Black)/(1-Black)
+				
+				cmyk[3] = rgb.minItem;
+				cmyk[0] = (1 - rgb[0] - cmyk[3]) / (1 - cmyk[3]);
+				cmyk[1] = (1 - rgb[1] - cmyk[3]) / (1 - cmyk[3]);
+				cmyk[2] = (1 - rgb[2] - cmyk[3]) / (1 - cmyk[3]);
+				
+				// set cmyk...
+				self.setDmx(8, (cmyk[0] * 255).round.asInteger);
+				self.setDmx(9, (cmyk[1] * 255).round.asInteger);
+				self.setDmx(10, (cmyk[2] * 255).round.asInteger);
+				self.setDmx(16, 255 - (cmyk[3] * 255).round.asInteger); // k is intensity 'inversed'
+			},
+			cmyk: { |self, cmyk|
+				cmyk = (cmyk * 255).round.asInteger;
+				self.setDmx(8, cmyk[0]);
+				self.setDmx(9, cmyk[1]);
+				self.setDmx(10, cmyk[2]);
+				self.setDmx(16, 255 - cmyk[3]); // k is intensity 'inversed'
+			},
+			strobe: { |self, strobe|
+				if(strobe[0] == 0, {
+					self.setDmx(15, 255);
+				}, {
+					self.setDmx(15, (strobe[0] * 254).round.asInteger);
+				});
+			}
+		));
 	}
 	
 	*new { |type, address = 0|

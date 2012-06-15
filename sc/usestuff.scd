@@ -3,12 +3,12 @@ OlaPipe
 d = DmxBuffer.new();
 d.fps = 100
 
-o = OlaPipe();
+o = OlaPipe(1);
 o.send(List.newUsing([13, 55, 231, 133]))
 
 d.addDevice(o);
 
-d.set(List.newUsing([13,14,15,16,17,198]), 0)
+d.set(List.newUsing([13,14,155,16,17,198]), 0)
 
 t = Task({
 	inf.do({
@@ -16,6 +16,7 @@ t = Task({
 		0.01.wait;
 	});
 }).play
+t.play
 t.stop
 o.dump
 
@@ -232,7 +233,7 @@ t.stop
 	n.sendMsg('/stage/devices', j, 'color', 0, 0, 0);
 })
 
-// simple messaging
+/////////////////////////////////// simple messaging
 
 d = DmxBuffer.new();
 d.fps = 50
@@ -248,12 +249,11 @@ p.addBuffer(d);
 64.do({ |i|
 	p.addDevice(Device(\smplrgbpar, i * 3));
 })
-)
-
 p.addGroup(\ring)
 p.devices.do({|dev, i|
 	p.addDeviceToGroup(dev, \ring);
 });
+)
 
 (
 p.message((
@@ -284,3 +284,88 @@ t = Task({
 )
 t.play
 t.stop
+
+
+/////////////////////// early bus testing
+d = DmxBuffer.new();
+o = OlaPipe(1);
+d.addDevice(o);
+
+p = Patcher(\stage);
+p.addBuffer(d);
+
+
+
+(
+64.do({ |i|
+	p.addDevice(Device(\smplrgbpar, i * 3));
+});
+p.addGroup(\ring);
+p.devices.do({|dev, i|
+	p.addDeviceToGroup(dev, \ring);
+});
+)
+
+p.busses
+s.waitForBoot({p.makeBusForMethod(\color, 3, \ring);})
+p.busses[0].bus.getnSynchronous
+p.busses[0].bus.setn([0, 0.3, 0.9])
+
+Ndef(\test, {
+	var ctl = SinOsc.kr([1/10, 1/13, 1/19], 0, 0.5, 0.5);
+	Out.kr(p.busses[0].bus, ctl);
+});
+
+
+///////////////////////////// testing with actual simulator... yay!
+d = DmxBuffer.new();
+d.fps = 30
+
+o = OlaPipe(1);
+d.addDevice(o);
+
+p = Patcher(\stage);
+p.addBuffer(d);
+
+(
+20.do({ |i|
+	p.addDevice(Device(\robeCw1200E, i * 17), \ring);
+});
+)
+(
+p.message((method: \color, data: Color.magenta.asArray ));
+p.message((method: \cmyk, data: [0, 1, 1, 1] ));
+)
+
+
+(
+t = Task({
+	var num = 20;
+	inf.do({ |i|
+		num.do({ |j|
+			var r, g, b;
+			r = ((i/10 + (pi/num * (j+(num/3 * 2)))).sin.abs);
+			g = ((i/10 + (pi/num * (j+(num/3 * 1)))).sin.abs * 255);
+			b = ((i/10 + (pi/num * j)).sin.abs * 255);
+			p.message((device: j, method: \cmyk, data: [0, r, r, 1-r]));
+/*			p.message((device: j, method: \cmyk, data: [g, 0, 1, 1-g]));*/
+		});
+		(1/30).wait;
+	})
+});
+)
+t.play
+t.stop
+
+
+p.message((method: \strobe, data: [0]))
+
+
+s.waitForBoot({p.makeBusForMethod(\strobe, 1);})
+p.busses[0].bus.getnSynchronous
+p.busses[0].bus.set(0.5)
+
+Ndef(\test, {
+	var ctl = LFSaw.kr(1/5, 1, 0.065, 0.83);
+	Out.kr(p.busses[0].bus, ctl);
+});
