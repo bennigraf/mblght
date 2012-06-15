@@ -30,31 +30,12 @@ Device {
 				self.setDmx(15, 255);
 				// white/poweron/intensity:
 				self.setDmx(16, 255);
+				// zoom: narrowest...
+				self.setDmx(14, 0);
 			},
 			color: { |self, rgb|
 				// rgb 2 cmyk:
 				var cmyk = [0, 0, 0, 0];
-				
-				/*
-				// taken from horrible js-sourcecode at http://www.rechnr.de/farbenrechner
-				// doesn't work as expected!!
-				cmyk[0] = 1 - rgb[0];
-				cmyk[1] = 1 - rgb[1];
-				cmyk[2] = 1 - rgb[2];
-				
-				cmyk[3] = 1;
-				if(cmyk[0] < cmyk[3], { cmyk[3] = cmyk[0] });
-				if(cmyk[1] < cmyk[3], { cmyk[3] = cmyk[1] });
-				if(cmyk[2] < cmyk[3], { cmyk[3] = cmyk[2] });
-				
-				if(cmyk[3] == 1, { // black?
-					cmyk[0] = 0; cmyk[1] = 0; cmyk[2] = 0;
-				}, {
-					cmyk[0] = (cmyk[0] - cmyk[3]) / (1 - cmyk[3]);
-					cmyk[1] = (cmyk[1] - cmyk[3]) / (1 - cmyk[3]);
-					cmyk[2] = (cmyk[2] - cmyk[3]) / (1 - cmyk[3]);
-				});
-				*/
 				
 				// another try: http://stackoverflow.com/questions/2426432/convert-rgb-color-to-cmyk
 				//Black   = minimum(1-Red,1-Green,1-Blue)
@@ -86,6 +67,9 @@ Device {
 				}, {
 					self.setDmx(15, (strobe[0] * 254).round.asInteger);
 				});
+			},
+			zoom: { |self, zoom|
+				self.setDmx(14, (zoom[0] * 255).round.asInteger);
 			}
 		));
 	}

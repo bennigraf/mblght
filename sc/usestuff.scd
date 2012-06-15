@@ -321,7 +321,7 @@ Ndef(\test, {
 d = DmxBuffer.new();
 d.fps = 30
 
-o = OlaPipe(1);
+o = OlaPipe(0);
 d.addDevice(o);
 
 p = Patcher(\stage);
@@ -334,9 +334,11 @@ p.addBuffer(d);
 )
 (
 p.message((method: \color, data: Color.magenta.asArray ));
-p.message((method: \cmyk, data: [0, 1, 1, 1] ));
+p.message((method: \color, data: [0, 0, 1] ));
+p.message((method: \cmyk, data: [1, 0, 0, 0] ));
 )
-
+p.message((method: \color, data: [0, 1, 0] ));
+p.message((method: \zoom, data: [0.1]))
 
 (
 t = Task({
@@ -347,7 +349,8 @@ t = Task({
 			r = ((i/10 + (pi/num * (j+(num/3 * 2)))).sin.abs);
 			g = ((i/10 + (pi/num * (j+(num/3 * 1)))).sin.abs * 255);
 			b = ((i/10 + (pi/num * j)).sin.abs * 255);
-			p.message((device: j, method: \cmyk, data: [0, r, r, 1-r]));
+/*			p.message((device: j, method: \color, data: [r, 0, 0]));*/
+			p.message((device: j, method: \zoom, data: [r]));
 /*			p.message((device: j, method: \cmyk, data: [g, 0, 1, 1-g]));*/
 		});
 		(1/30).wait;
@@ -358,14 +361,63 @@ t.play
 t.stop
 
 
-p.message((method: \strobe, data: [0]))
+p.message((method: \strobe, data: [0.1]))
 
 
 s.waitForBoot({p.makeBusForMethod(\strobe, 1);})
+s.waitForBoot({p.makeBusForMethod(\zoom, 1);})
 p.busses[0].bus.getnSynchronous
-p.busses[0].bus.set(0.5)
+p.busses[0].bus.set(0)
 
 Ndef(\test, {
-	var ctl = LFSaw.kr(1/5, 1, 0.065, 0.83);
+	var ctl = LFSaw.kr(1/5, 1, 0.065, 0.81);
+/*	ctl = MouseY.kr(0.81 - 0.065, 0.81 + 0.065);*/
 	Out.kr(p.busses[0].bus, ctl);
 });
+Ndef(\test).pause
+
+Ndef(\test, {
+	var ctl = SinOsc.kr(1/5, 0, 0.5, 0.5);
+	Out.kr(p.busses[0].bus, ctl);
+});
+
+
+p.busses[0].bus.getnSynchronous
+p.busses[0].bus.setn([0, 1, 0])
+p.busses[0].routine.stop
+p.removeBus(0)
+p.message((method: \color, data: p.busses[0].bus.getnSynchronous))
+p.message((method: \color, data: [0, 1, 1]))
+
+
+///////////////////////////// Node-testing
+(
+d = DmxBuffer.new();
+d.fps = 30;
+
+o = OlaPipe(0);
+d.addDevice(o);
+
+p = Patcher(\stage);
+p.addBuffer(d);
+
+20.do({ |i|
+	p.addDevice(Device(\robeCw1200E, i * 17), \ring);
+});
+)
+
+s.waitForBoot({p.makeBusForMethod(\color, 3, nil, 20);})
+p.busses[0].bus.setn((0..60).collect({|i| i % 2}))
+p.numDevices(\ring)
+Ndef(\test).source = { }
+(
+Ndef(\test, {
+	var trig = Dust.kr(Line.kr(0.5, 2, 10));
+	var clr = 3.collect({ TRand.kr(0.0, 1.0, trig) });
+	var ctl = (0..59).collect({ |i|
+		var dng = clr * Decay.kr(trig, 3);
+		DelayN.kr(dng.wrapAt(i), 2, 2/20 * (i/3).floor);
+	});
+	Out.kr(p.busses[0].bus, ctl);
+});
+)

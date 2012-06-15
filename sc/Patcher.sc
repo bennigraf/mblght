@@ -257,6 +257,7 @@ Patcher {
 		
 		var bus = (); // bus proto...
 		var s = Server.default;
+		var numDevices = this.numDevices(group);
 		// how do I get the number of arguments for a method??? I don't! => numArgs...
 		
 		if(s.pid == nil, {
@@ -274,6 +275,7 @@ Patcher {
 		
 		bus.bus = Bus.control(s, numArgs * channels);
 		
+		
 		bus.routine = Routine.run({
 			var busdata;
 			var message = ();
@@ -288,12 +290,12 @@ Patcher {
 				if(bus.channels == 1, {
 					// bus contains only data for 1 channel so it also must be numArgs big...
 					message[\data] = bus.bus.getnSynchronous;
-					message.postln;
+/*					message.postln;*/
 					this.message(message);
-				}, {
+				}, {	
 					// for each device get data from bus (!offset!), wrap bus channels...
 					busdata = bus.bus.getnSynchronous; // .getnAt doesn't exist...
-					this.numDevices(bus.group).do({ |i|
+					numDevices.do({ |i|
 						var offset = i*bus.numArgs;
 						message[\device] = i;
 						// wrapAt with an array gives array of values at indizies given by array
@@ -307,6 +309,14 @@ Patcher {
 		
 		// add bus to bus-dictionary
 		busses.add(bus);
-		
+	}
+	removeBus { |index|
+		if (busses[index].notNil, {
+			busses[index].routine.stop;
+			busses[index].bus.free;
+			busses.removeAt(index);
+		}, {
+			("Nothing found at index "+index).postln;
+		});
 	}
 }
