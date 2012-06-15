@@ -23,6 +23,7 @@ Patcher {
 	var buffers; // holds DMXBuffer objects
 	var oscfuncs;
 	var <busses;
+	var server; // holds default server since patcher uses busses!
 	
 	*new { |id|
 		^super.new.init(id);
@@ -33,6 +34,7 @@ Patcher {
 		groups = IdentityDictionary();
 		buffers = List();
 		busses = List();
+		server = Server.default;
 		
 		if(myid.isKindOf(Symbol).not, {
 			"ID must be a symbol!".postln;
@@ -41,6 +43,7 @@ Patcher {
 		id = myid;
 		oscfuncs = List();
 		
+		server.boot();
 		// deprecate osc functionality for now...
 		/*
 		oscfuncs.add(OSCFunc.newMatching({
@@ -63,31 +66,70 @@ Patcher {
 		});
 	}
 	
-	addDevice { |device, group|
+	addDevice { |myDevice, myGroup|
 		// add device to internal list of devices
 		// register OSC path/address/methods? Or pass methods to Device... better not, otherwise 
 		//   I have 5 methods for each device in memory... => call methods when device gets called!
 		
 		var deviceNum;
+		var device = (); // holds device to add later
+		var buses; // kr-buses used for data...
+		var routine; // update-routine which calls actions periodically
+		
+		buses = this.makeBussesForDevice(myDevice);
+		routine = this.makeRoutineForDevice(myDevice, buses);
+		
+		device[\device] = myDevice;
+		device[\buses] = buses;
+		
 		devices.add(device);
 		deviceNum = devices.size - 1;
 		
-		if(group.notNil, {
-			if(groups[group].isNil, {
-				groups.put(group, List());
+		if(myGroup.notNil, {
+			if(groups[myGroup].isNil, {
+				groups.put(myGroup, List());
 			});
-			groups[group].add(device);
+			groups[myGroup].add(device);
 		});
 		
 		// call init message as default...
-		this.message((
+/*		this.message((
 			device: deviceNum,
 			method: \init
-		));
-	}
-/*	devices {*/
+		));*/
 		
-/*	}*/
+		// create busses for each method, get their data in a routine or something...
+		
+		
+	}
+	makeBussesForDevice { |myDevice|
+		// make bus for every method, store in busses-List
+		var buses = Dictionary(); // key->value list
+		// somewhereHere...
+		var reservedKeys = ['channels', 'init', 'numArgs'];
+		Device.types[myDevice.type].keysValuesDo({ |method|
+			// do for each method, but omit reserved keys 'channel', 'init', 'numArgs:
+			if(reservedKeys.includes(method) == false, {
+				var numArgs = Device.types[myDevice.type].numArgs[method];
+				buses.put(method, Bus.control(server, numArgs));
+			});
+		});
+		^buses;
+	}
+	makeRoutineForDevice { |device, buses|
+		var routine = Routine.run({
+			inf.do({
+				buses.keysValuesDo({ |method, bus|
+					device.action(method, bus.getnSynchronous);
+				});
+				this.setBuffers(device.getDmx, device.address);
+				(1/30).wait;
+			});
+		});
+		^routine;
+	}
+	
+	
 	removeDevice { |index|
 		devices.removeAt(index);
 	}
@@ -256,11 +298,10 @@ Patcher {
 	makeBusForMethod { |method, numArgs = 1, group = nil, channels = 1|
 		
 		var bus = (); // bus proto...
-		var s = Server.default;
 		var numDevices = this.numDevices(group);
 		// how do I get the number of arguments for a method??? I don't! => numArgs...
 		
-		if(s.pid == nil, {
+		if(server.pid == nil, {
 			"Boot server first!!".postln;
 			^false;
 		});
@@ -273,7 +314,7 @@ Patcher {
 		bus.channels = channels; // notice that bus.channels != bus.bus.numChannels, the latter is channels*numArgs!
 		bus.method = method;
 		
-		bus.bus = Bus.control(s, numArgs * channels);
+		bus.bus = Bus.control(server, numArgs * channels);
 		
 		
 		bus.routine = Routine.run({

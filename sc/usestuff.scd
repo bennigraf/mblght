@@ -401,6 +401,12 @@ d.addDevice(o);
 p = Patcher(\stage);
 p.addBuffer(d);
 
+p.addDevice(Device(\robeCw1200E, 0), \ring);
+
+p.devices[0].buses[\color].setn([1, 1, 0])
+p.removeDevice(0)
+p.devices
+
 20.do({ |i|
 	p.addDevice(Device(\robeCw1200E, i * 17), \ring);
 });

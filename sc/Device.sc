@@ -8,11 +8,16 @@ Device {
 	var <>address = 0;
 	var <>type;
 	var <>dmxData;
-	
+
 	*initClass {
 		// load some default devices on class instantiation
+		// a few keys are reserved for special purposes:
+		//  channel - holds to total number of dmx channels used by this device
+		//  numArgs - holds number of arguments each method expects
+		//  init - holds the init method which i.e. can set some default values
 		Device.addType(\smplrgbpar, (
 			channels: 3,
+			numArgs: (color: 3),
 			color: { |self, args|
 				// return list with dmx slots/addresses (starting from 0 for this device) and values
 				self.setDmx(0, (args[0] * 255).round.asInteger);
@@ -22,6 +27,7 @@ Device {
 		));
 		Device.addType(\robeCw1200E, (
 			channels: 17,
+			numArgs: (color: 3, cmyk: 4, strobe: 1, zoom: 1),
 			init: { |self|
 				// pan/tilt center:
 				self.setDmx(0, 127);
@@ -54,13 +60,14 @@ Device {
 				self.setDmx(10, (cmyk[2] * 255).round.asInteger);
 				self.setDmx(16, 255 - (cmyk[3] * 255).round.asInteger); // k is intensity 'inversed'
 			},
-			cmyk: { |self, cmyk|
+			// careful! Don't write multiple actions that overwrite each other! Oh noes...
+/*			cmyk: { |self, cmyk|
 				cmyk = (cmyk * 255).round.asInteger;
 				self.setDmx(8, cmyk[0]);
 				self.setDmx(9, cmyk[1]);
 				self.setDmx(10, cmyk[2]);
 				self.setDmx(16, 255 - cmyk[3]); // k is intensity 'inversed'
-			},
+			},*/
 			strobe: { |self, strobe|
 				if(strobe[0] == 0, {
 					self.setDmx(15, 255);
@@ -74,15 +81,15 @@ Device {
 		));
 	}
 	
-	*new { |type, address = 0|
-		^super.new.init(type, address);
+	*new { |mytype, myaddress = 0|
+		^super.new.init(mytype, myaddress);
 	}
-	init { | type, address = 0 |
+	init { | mytype, myaddress = 0 |
 		var channels;
-		this.address = address;
-		this.type = type;
+		address = myaddress;
+		type = mytype;
 		channels = types[type][\channels];
-		this.dmxData = List.newClear(channels).fill(0);
+		dmxData = List.newClear(channels).fill(0);
 	}
 	
 	*addType { |title, definition| 

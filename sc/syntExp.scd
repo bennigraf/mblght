@@ -47,3 +47,21 @@ n.source = { Silent.ar + 2 }
 n[2] = \filter -> {|in| in * SinOsc.ar(1).clip(0, 1)}
 n[4] = \filter -> {|in| Out.kr(b, in)}
 n.play(b)
+
+
+b = Bus.control(s, 3)
+
+Ndef(\one, { Out.kr(b, [SinOsc.kr(1/3), 1, 0]) });
+Ndef(\two, { Out.kr(b, [0, 0, SinOsc.kr(1/2)]) });
+
+Ndef(\three, {
+	var ctl = Mix();
+	OffsetOut.kr(b + 1, ctl);
+})
+
+b.getSynchronous
+b.scope
+
+
+
+{ |arg1, arg2| var test; }.def.argNames.size
