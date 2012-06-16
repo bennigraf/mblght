@@ -1,0 +1,18 @@
+So far:
+
+Bus for every value/device in patcher
+* write to buses using ndefs. works?? Yeah! Fucking Rocks!
+
+* summing-bus-object:
+  Methods of summing: adding values & clipping them? Would work...
+  Adding methods to bus like .add or .multiply??
+  Or use special NodeProxys/Synths for that? Like 
+	Adder(srcNodeProxy1, srcNodeProxy2) => creates NodeProxy with added output
+  Flexible Routing!! Some (graphic?) notation? Or at least visual representation?
+
+
+
+TODO:
+* some messages to patcher to get:
+  each bus of a certain method from any device or any nth device or whatever to iterate over in a synth
+* some sort of summing-bus-object (see above), but prbly before patcher

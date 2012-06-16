@@ -402,15 +402,25 @@ p = Patcher(\stage);
 p.addBuffer(d);
 
 p.addDevice(Device(\robeCw1200E, 0), \ring);
-
+p.busesForMethod(\color)
+p.busesForGroupMethod(\ring, \color)
 p.devices[0].buses[\color].setn([1, 1, 0])
+p.devices[0].buses[\color].setn([1, 0.5, 0.9])
+p.message((method: \color, data: [0, 1, 0]))
 p.removeDevice(0)
 p.devices
+
 
 20.do({ |i|
 	p.addDevice(Device(\robeCw1200E, i * 17), \ring);
 });
+
+p.devices.do({|dev|
+/*	dev.buses[\color].setn([0, 1, 0])*/
+	dev.buses[\zoom].setn([0])
+});
 )
+
 
 s.waitForBoot({p.makeBusForMethod(\color, 3, nil, 20);})
 p.busses[0].bus.setn((0..60).collect({|i| i % 2}))
@@ -427,3 +437,12 @@ Ndef(\test, {
 	Out.kr(p.busses[0].bus, ctl);
 });
 )
+
+/////////////////////// individual bus
+
+Ndef(\test, { Out.kr(
+	[p.devices[0].buses[\color], p.devices[1].buses[\color]], 
+	// here better: p.getBuses(\color) or similar! Yay!
+	SinOsc.kr(1/3, 0, 0.5, 0.5)!3)})
+
+

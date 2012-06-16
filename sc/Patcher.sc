@@ -118,9 +118,14 @@ Patcher {
 	}
 	makeRoutineForDevice { |device, buses|
 		var routine = Routine.run({
+			var val, lastval;
 			inf.do({
 				buses.keysValuesDo({ |method, bus|
-					device.action(method, bus.getnSynchronous);
+					val = bus.getnSynchronous;
+					if(val != lastval, {
+						device.action(method, bus.getnSynchronous);
+					});
+					lastval = val;
 				});
 				this.setBuffers(device.getDmx, device.address);
 				(1/30).wait;
@@ -163,6 +168,25 @@ Patcher {
 		}, {
 			^groups[group].size;
 		});
+	}
+	
+	busesForMethod { |method, deviceList|
+		var buses = [];
+		if(deviceList.isNil, {
+			deviceList = devices;
+		});
+		deviceList.do({ |dev, i|
+			if(dev.device.hasMethod(method), {
+				buses = buses.add(dev.buses[method]);
+			}, {
+				buses = buses.add("false");
+			});
+		});
+		^buses;
+	}
+	busesForGroupMethod { |group, method|
+		var deviceList = groups[group];
+		^this.busesForMethod(method, deviceList);
 	}
 	
 	
@@ -217,10 +241,12 @@ Patcher {
 			deviceNums = [deviceNums];
 		});
 		deviceNums.do({ |num, i|
-			if(deviceList[num % deviceList.size].hasMethod(method), {
+			if(deviceList[num % deviceList.size].device.hasMethod(method), {
 				// wrap devices index, just to be sure...
-				deviceList[num % deviceList.size].action(method, data);
-				this.setBuffers(deviceList[num%deviceList.size].getDmx, deviceList[num%deviceList.size].address);
+/*				deviceList[num % deviceList.size].action(method, data);*/
+/*				this.setBuffers(deviceList[num%deviceList.size].getDmx, deviceList[num%deviceList.size].address);*/
+				// rewrite: write data to bus instead of device directly.
+				deviceList[num % deviceList.size].buses[method].setn(data);
 			});
 		});
 	}

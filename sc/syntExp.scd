@@ -64,4 +64,6 @@ b.scope
 
 
 
-{ |arg1, arg2| var test; }.def.argNames.size
+
+
+

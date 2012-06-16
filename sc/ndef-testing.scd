@@ -48,7 +48,7 @@ Routine{
 
 
 /////////////////////////////////// working!
-
+s.boot
 // order of ndef execution apparentlly arbitrary
 Ndef(\node1, {
 	HPF.ar(LPF.ar(SinOsc.ar(mul: 4).softclip, 1000), 400) * Pulse.ar(39);
@@ -69,6 +69,20 @@ Ndef(\node3).bus.getSynchronous
 Ndef(\node3).unmap(\in)
 
 Ndef(\node1).free
+
+////////////// same with nodeproxys
+n = NodeProxy().source = {
+	HPF.ar(LPF.ar(SinOsc.ar(mul: 4).softclip, 1000), 400) * Pulse.ar(39);
+}
+o = NodeProxy().source = {
+	A2K.kr(Amplitude.ar(\in.ar))
+};
+o.map(\in, n)
+o.bus.getSynchronous
+o.unmap(\in)
+
+
+
 
 
 
@@ -95,6 +109,22 @@ Ndef(\nbus, {
 	Out.kr(c, SinOsc.kr([1/10, 1/13]));
 })
 
+////////////////////////////// multichannel??
+s.boot
+b = NodeProxy()
+b[0] = { SinOsc.ar(392) }
+b[13] = {SinOsc.ar(2.93)}
+b[33] = \filter -> { |in| Out.ar(1, in); in }
+
+b[44] = \filter -> { |in| (in * 100).softclip }
+
+b[55] = \filter -> { |in| Out.ar(0, in * 0.1); in}
+
+b[33] = nil
+b.play
 
 
+
+b.dump
+b.bus.scope
 
