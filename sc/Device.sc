@@ -42,14 +42,13 @@ Device {
 			color: { |self, rgb|
 				// rgb 2 cmyk:
 				var cmyk = [0, 0, 0, 0];
-				
+				rgb = rgb.clip(0, 1); // clip incoming...
 				// another try: http://stackoverflow.com/questions/2426432/convert-rgb-color-to-cmyk
 				//Black   = minimum(1-Red,1-Green,1-Blue)
 				//Cyan    = (1-Red-Black)/(1-Black)
 				//Magenta = (1-Green-Black)/(1-Black)
 				//Yellow  = (1-Blue-Black)/(1-Black)
-				
-				cmyk[3] = rgb.minItem;
+				cmyk[3] = (1.0-rgb).minItem;
 				cmyk[0] = (1 - rgb[0] - cmyk[3]) / (1 - cmyk[3]);
 				cmyk[1] = (1 - rgb[1] - cmyk[3]) / (1 - cmyk[3]);
 				cmyk[2] = (1 - rgb[2] - cmyk[3]) / (1 - cmyk[3]);
