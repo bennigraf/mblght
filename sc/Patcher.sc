@@ -24,6 +24,12 @@ Patcher {
 	var oscfuncs;
 	var <busses;
 	var server; // holds default server since patcher uses busses!
+	classvar <default; // default (usually first) Patcher...
+	classvar <all; // holds all opened patchers for reference...
+	
+	*initClass {
+		all = ();
+	}
 	
 	*new { |id|
 		^super.new.init(id);
@@ -36,16 +42,21 @@ Patcher {
 		busses = List();
 		server = Server.default;
 		
+		if(default==nil, { // make this the default patcher if none is there...
+			default = this;
+		});
+		all.add(myid -> this);
+		
 		if(myid.isKindOf(Symbol).not, {
 			"ID must be a symbol!".postln;
 			^nil;
 		});
 		id = myid;
-		oscfuncs = List();
 		
-		server.boot();
+		server.waitForBoot();
 		// deprecate osc functionality for now...
 		/*
+		oscfuncs = List();
 		oscfuncs.add(OSCFunc.newMatching({
 			("Patcher "++myid++" talking!").postln;
 		}, '/'++myid));
@@ -93,14 +104,12 @@ Patcher {
 		});
 		
 		// call init message as default...
-/*		this.message((
-			device: deviceNum,
-			method: \init
-		));*/
+		if(myDevice.hasMethod(\init), {
+			myDevice.action(\init);
+			this.setBuffers(myDevice.getDmx, myDevice.address);
+		});
 		
 		// create busses for each method, get their data in a routine or something...
-		
-		
 	}
 	makeBussesForDevice { |myDevice|
 		// make bus for every method, store in busses-List
@@ -341,7 +350,6 @@ Patcher {
 		bus.method = method;
 		
 		bus.bus = Bus.control(server, numArgs * channels);
-		
 		
 		bus.routine = Routine.run({
 			var busdata;
