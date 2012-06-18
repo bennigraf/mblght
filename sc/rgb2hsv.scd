@@ -1,3 +1,6 @@
+// src: http://www.csgnetwork.com/csgcolorsel4.html
+// Another one (better): http://snipplr.com/view/14590/
+
 function RGB2HSV (RGB, HSV) {
     r = RGB.r / 255; g = RGB.g / 255; b = RGB.b / 255; // Scale to unity.
 
