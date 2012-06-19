@@ -43,21 +43,24 @@ x = NodeProxy.control(s, 1).source = { LFSaw.kr(LFSaw.kr(1/10, 0, 0.5, 0.5).lag(
 n[\panner].map(\pos, x)
 n[\panner].unmap(\pos)
 
-n.add(\source, NodeProxy.control(s, 3))
+n.add(\source, NodeProxy.control(s, 60))
 n.moveUp(\source)
 
 (n[\source].source = {
 /*	[DC.kr(1), DC.kr(0), DC.kr(0)]*/
-	var hsv = DC.kr(1)!3;
-	var rgb;
-	var soundIn = SoundIn.ar();
-	rgb;
+	var hsv;
+	var rgb = { |i|
+		Hsv2rgb.kr(SinOsc.kr(1/38, pi / 20 * i, 0.1, 0.7), 1, 0.3);
+	}!20;
+/*	rgb.poll;*/
+	rgb.flatten;
 })
+
 
 n.add(\spectrum, NodeProxy.control(s, 60))
 (n[\spectrum].source = {
+	var in = \in.kr(0!60);
 	var soundIn = Compander.ar(SoundIn.ar(0), SoundIn.ar(0), 0.3, 1, 1/4);
-	var rgb = Hsv2rgb.kr(SinOsc.kr(1/38, 0, 0.2, 0.7), 1, 0.3);
 	var bins = (0..19).collect({ |i|
 		var freq = (80/25*i+55).midicps;
 		var snd = BPF.ar(soundIn, freq, 0.15);
@@ -65,8 +68,9 @@ n.add(\spectrum, NodeProxy.control(s, 60))
 		A2K.kr(Amplitude.ar(snd, releaseTime: 1));
 	});
 	var out = bins.collect({ |bin| 
-		[rgb[0], (bin * 5).min(1), rgb[2]];
+		[0, (bin * 5).min(1), 0];
 	}).flatten;
+	out = out + in;
 	out;
 })
 n.printChain

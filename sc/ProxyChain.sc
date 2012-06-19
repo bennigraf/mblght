@@ -28,7 +28,9 @@ ProxyChain {
 	}
 	addNodeName { |name = nil, nodeproxy|
 		if(name.notNil, { 
-			nodenames.add(name -> nodeproxy);
+			if(nodenames[\name].isNil, {
+				nodenames.add(name -> nodeproxy);
+			});
 		});
 	}
 	
@@ -85,14 +87,14 @@ ProxyChain {
 		this.add(name, nodeproxy);
 	}
 	
-	addBefore { |index, nodeproxy|
+	addBefore { |index, name, nodeproxy|
 		if(index.isKindOf(Symbol), {
 			index = this.nodeIndexFromName(index);
 		});
 		
 		if((index > 1) || (index == 0 && topprox.isNil), {
 			nodes.insert(index, nodeproxy);
-			this.addNodeName(index, nodeproxy);
+			this.addNodeName(name, nodeproxy);
 		}, {
 			"couldn't add before!".postln;
 		});
@@ -100,7 +102,7 @@ ProxyChain {
 	}
 	
 	
-	addAfter { |index, nodeproxy|
+	addAfter { |index, name, nodeproxy|
 		if(index.isKindOf(Symbol), {
 			index = this.nodeIndexFromName(index);
 		});
@@ -110,7 +112,7 @@ ProxyChain {
 		}, {
 			this.add(nodeproxy);
 		});
-		this.addNodeName(index, nodeproxy);
+		this.addNodeName(name, nodeproxy);
 		this.updateChain;
 	} 
 	
