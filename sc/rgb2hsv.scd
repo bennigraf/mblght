@@ -46,7 +46,7 @@ function HSV2RGB (HSV, RGB) {
         
         if (var_i == 0) {var_r = v; var_g = var_3; var_b = var_1}
         else if (var_i == 1) {var_r = var_2; var_g = v; var_b = var_1}
-        else if (var_i == 2) {var_r = var_1; var_g = v; var_b = var_3}
+/*        else if (var_i == 2) {var_r = var_1; var_g = v; var_b = var_3}*/
         else if (var_i == 3) {var_r = var_1; var_g = var_2; var_b = v}
         else if (var_i == 4) {var_r = var_3; var_g = var_1; var_b = v}
         else {var_r = v; var_g = var_1; var_b = var_2};
@@ -56,3 +56,37 @@ function HSV2RGB (HSV, RGB) {
         RGB.b = var_b * 255;
     }
 }
+(
+f = {
+	var rgb = Silent.ar!3;
+	var rgbhlpr = Silent.ar!3;
+	var hsv = [DC.ar(0), DC.ar(1), DC.ar(1)];
+	hsv = [MouseX.kr(0, 1), MouseY.kr(0, 1), \val.ar(1)];
+	rgb = Select.ar(hsv[1].ceil, [ // 0 or 1, 0 means no color (no saturation)
+		hsv[2]!3;
+	, {
+		rgbhlpr[0] = hsv[2] * (1 - hsv[1]);
+		rgbhlpr[1] = hsv[2] * (1 - (hsv[1] * ((hsv[0] * 6) - (hsv[0] * 6).floor)));
+		rgbhlpr[2] = hsv[2] * (1 - (hsv[1] * (1 - ((hsv[0] * 6) - (hsv[0] * 6).floor))));
+		Select.ar((hsv[0]*6).floor, [
+			{ [hsv[2], rgbhlpr[2], rgbhlpr[0]] },
+			{ [rgbhlpr[1], hsv[2], rgbhlpr[0]] },
+			{ [rgbhlpr[0], hsv[2], rgbhlpr[2]] },
+			{ [rgbhlpr[0], rgbhlpr[1], hsv[2]] },
+			{ [rgbhlpr[2], rgbhlpr[0], hsv[2]] },
+			{ [hsv[2], rgbhlpr[0], rgbhlpr[1]] },
+		]);
+	}]);
+	SendReply.ar(Impulse.ar(25), '/clr', rgb);
+	Silent.ar();
+}.play
+)
+
+OSCdef(\clr, { |msg|
+	defer{ w.background_(Color(msg[3], msg[4], msg[5]))}
+}, '/clr');
+
+w = Window()
+w.front
+x = Slider(w)
+x.action = { |slidr| f.set(\val, slidr.value())}
