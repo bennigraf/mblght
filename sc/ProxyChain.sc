@@ -1,6 +1,7 @@
 ProxyChain {
 	
-	var <nodes;
+	var nodes;
+	var nodenames;
 	var bottomprox, topprox;
 	var server;
 	
@@ -10,18 +11,25 @@ ProxyChain {
 	
 	init {
 		nodes = List();
+		nodenames = Dictionary();
 		bottomprox = nil; topprox = nil;
 		server = Server.default;
 		this.updateChain;
 	}
 	
-	add { |nodeproxy|
+	add { |name = nil, nodeproxy|
 		if(bottomprox.isNil, {
 			nodes.add(nodeproxy);
 		}, {
 			nodes.insert(nodes.size - 1, nodeproxy);
 		});
+		this.addNodeName(name, nodeproxy);
 		this.updateChain;
+	}
+	addNodeName { |name = nil, nodeproxy|
+		if(name.notNil, { 
+			nodenames.add(name -> nodeproxy);
+		});
 	}
 	
 	remove { |index|
@@ -35,44 +43,82 @@ ProxyChain {
 			});
 			node = nodes.removeAt(index);
 			node.clear;
+			this.removeNodeName(node);
 			this.updateChain;
 			^node;
+		});
+	}
+	
+	removeNodeName { |node = nil|
+		var nodename = nodenames.findKeyForValue(node);
+		if(nodename.notNil, {
+			nodenames.removeAt(nodename);
 		});
 	}
 	
 	getNodeIndex { |node|
 		^nodes.find(List.newUsing([node]));
 	}
+	nodeIndexFromName { |name|
+		var node;
+		if(nodenames[name].notNil, {
+			node = nodenames[name];
+			^this.getNodeIndex(node);
+		});
+		^nil;
+	}
+	nodeNameFromIndex{ |index|
+		var node;
+		^nodenames.findKeyForValue(nodes[index]);
+	}
 	
-	addFirst { |nodeproxy|
+	addFirst { |name = nil, nodeproxy|
 		if(topprox.isNil, {
 			nodes.insert(0, nodeproxy);
 		}, {
 			nodes.insert(1, nodeproxy);
 		});
+		this.addNodeName(name, nodeproxy);
 		this.updateChain;
 	}
-	addLast { |nodeproxy|
-		this.add(nodeproxy);
+	addLast { |name = nil, nodeproxy|
+		this.add(name, nodeproxy);
 	}
 	
 	addBefore { |index, nodeproxy|
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if((index > 1) || (index == 0 && topprox.isNil), {
 			nodes.insert(index, nodeproxy);
+			this.addNodeName(index, nodeproxy);
+		}, {
+			"couldn't add before!".postln;
 		});
 		this.updateChain;
 	}
 	
+	
 	addAfter { |index, nodeproxy|
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if((index < nodes.size && bottomprox.isNil) || (index < (nodes.size - 1)), {
 			nodes.insert(index + 1, nodeproxy);
 		}, {
 			this.add(nodeproxy);
 		});
+		this.addNodeName(index, nodeproxy);
 		this.updateChain;
 	} 
 	
 	moveUp { |index|
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if((index > 0 && topprox.isNil) || (index > 1), {
 			var node = nodes.removeAt(index);
 			nodes.insert(index-1, node);
@@ -84,8 +130,12 @@ ProxyChain {
 	
 	
 	moveDown { |index|
-/*		if(index < (nodes.size))*/
 		var lastindex = nodes.size - 1;
+		
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if((index < (lastindex - 1)) || (index == lastindex && bottomprox.isNil), {
 			var node = nodes.removeAt(index);
 			nodes.insert(index+1, node);	
@@ -93,9 +143,14 @@ ProxyChain {
 		this.updateChain;
 	}
 	
-	stickToBottom { |index|
+	stickToBottom { |index = nil|
 		// usage: pc.stickToBottom(pc[4]); - should give proxy returned by pc[4] as argument.
 		var node;
+		
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if(index.isNil, {
 			index = nodes.size-1;
 		});
@@ -106,9 +161,14 @@ ProxyChain {
 		this.getNodeIndex(node).postln;
 		this.updateChain;
 	}
-	stickToTop { |index|
+	stickToTop { |index = nil|
 		// usage: see above
 		var node;
+		
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		
 		if(index.isNil, { index = 0 });
 		node = nodes.removeAt(index);
 		topprox = node;
@@ -137,10 +197,46 @@ ProxyChain {
 					node.map(\in, nodes[i - 1]);
 				});
 			});
-			server.sync;
 		});
 	}
 	
+	at { |index = nil|
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
+		^nodes[index];
+	}
+	
+	printChain { 
+		nodes.do({ |node, i|
+			var nodename = this.nodeNameFromIndex(i);
+			var str = "Node"+i;
+			if(nodename.notNil, {
+				str = str + "(\\"++nodename++")";
+			});
+			str = str ++ ":" + node;
+			if(node == topprox, {
+				str = str + "(Sticks to top)";
+			});
+			if(node == bottomprox, {
+				str = str + "(Sticks to bottom)";
+			});
+			str.postln;
+		});
+	}
+	
+	clear { |sure = false|
+		if(sure.not, {
+			"Are you sure??".postln;
+		});
+	
+		nodes.do({ |node, i|
+			node.clear;
+		});
+		nodes = List();
+		nodenames = Dictionary();
+		this.updateChain;
+	}
 }
 /*
 List.newUsing([1, 2, 3]).insert(1, 1.4)
@@ -180,4 +276,20 @@ p.remove(2)
 p.unStickFromBottom
 p.moveUp(2)
 p.dump
+
+
+p = ProxyChain()
+
+p.printChain
+
+p.clear(true)
+
+p.add(\src, NodeProxy.control(s, 2))
+p[\src].source = { SinOsc.kr(1/8)!2 }
+p.add(\playback, NodeProxy().source = { Out.kr(b, \in.kr) })
+p.stickToBottom(\playback)
+p.add(\saw, NodeProxy().source = { \in.kr * LFSaw.kr(2) })
+p[\saw].source = {\in.kr * LFSaw.kr(\freq.kr(0.5))}
+p[\saw].set(\freq, 20)
+p[\saw].lag(\freq, 10)
 */
