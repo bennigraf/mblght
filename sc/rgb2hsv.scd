@@ -46,7 +46,7 @@ function HSV2RGB (HSV, RGB) {
         
         if (var_i == 0) {var_r = v; var_g = var_3; var_b = var_1}
         else if (var_i == 1) {var_r = var_2; var_g = v; var_b = var_1}
-/*        else if (var_i == 2) {var_r = var_1; var_g = v; var_b = var_3}*/
+        else if (var_i == 2) {var_r = var_1; var_g = v; var_b = var_3}
         else if (var_i == 3) {var_r = var_1; var_g = var_2; var_b = v}
         else if (var_i == 4) {var_r = var_3; var_g = var_1; var_b = v}
         else {var_r = v; var_g = var_1; var_b = var_2};
@@ -81,7 +81,16 @@ f = {
 	Silent.ar();
 }.play
 )
-
+s.boot;
+(
+f = { 
+	var rgb;
+	var hsv = [[1, 0.4] * MouseX.kr(0, 1), MouseY.kr(0, 1), \val.kr(1)];
+	rgb = Hsv2rgb.kr(hsv[0], hsv[1], hsv[2]).flop.flatten;
+/*	SendReply.ar(Impulse.ar(25), '/clr', rgb);*/
+	rgb.poll;
+}.play)
+f.free
 OSCdef(\clr, { |msg|
 	defer{ w.background_(Color(msg[3], msg[4], msg[5]))}
 }, '/clr');
