@@ -1,0 +1,25 @@
+
+
+I did:
+
+* messaging via "events" instead of osc - more performance, less overhead
+	(osc deprecated, but may keep it for connectivity)
+
+* every device/method gets bus
+
+
+
+* ProxyChains!
+	-> NodeProxy (a thing on the server) tool for synthesis
+	-> ProxyChain chains multiple of those to do more complex signal routing
+		easy access to chains to dynamically modify them
+
+* Pseudo-Ugen:
+	Hsv2rgb, more planned (MultiPanAz, Pan2d?, Farbverläufe, Versch. Mixer, ... immer da wo Mehrkanal-Signale gebraucht werden)
+
+* NodeProxyTemplates
+	Templates for often needed tasks
+
+=> DEMO
+
+Setup System, explain used fixtures

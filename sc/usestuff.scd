@@ -386,7 +386,14 @@ p.busses[0].bus.getnSynchronous
 p.busses[0].bus.setn([0, 1, 0])
 p.busses[0].routine.stop
 p.removeBus(0)
-p.message((method: \color, data: p.busses[0].bus.getnSynchronous))
+
+
+p.message(
+	(method: \color, data: [1, 0, 1])
+)
+
+
+
 p.message((method: \color, data: [0, 1, 1]))
 
 

@@ -49,10 +49,14 @@ n.moveUp(\source)
 (n[\source].source = {
 /*	[DC.kr(1), DC.kr(0), DC.kr(0)]*/
 	var hsv = DC.kr(1)!3;
-	var rgb;
-	var soundIn = SoundIn.ar();
+	var rgb 20.do{ |i|
+		Hsv2rgb.kr(SinOsc.kr(1/10, ), 0.3, 0.2);
+	}
 	rgb;
 })
+
+// btw, pseqs??
+
 
 n.add(\spectrum, NodeProxy.control(s, 60))
 (n[\spectrum].source = {
