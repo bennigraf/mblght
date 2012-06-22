@@ -2,8 +2,8 @@
 Routine.run({
 	d = DmxBuffer.new();
 	d.fps = 30;
-	o = OlaPipe(0);
-	d.addDevice(o);
+/*	o = OlaPipe(0);*/
+/*	d.addDevice(o);*/
 	s.waitForBoot({
 		p = Patcher(\stage);
 		s.sync;
@@ -22,17 +22,17 @@ p.message((method: \color, data: [1, 0, 1]))
 
 n.clear
 
-n = ProxyChain()
+n = ProxyChain();
 
-n.add(\player, NodeProxy(s))
-n.stickToBottom()
+n.add(\player, NodeProxy(s));
+n.stickToBottom();
 (n[\player].source = {
 	var in = \in.kr(0!60);
 	p.busesForMethod(\color).do({|bus, i|
 		var offset = i * 3;
 		Out.kr(bus, [in[offset], in[offset+1], in[offset+2]]);
 	});
-})
+});
 n.printChain
 
 n.add(\panner, NPTempl(\panner, (\in: 3, \out: 20)))
@@ -58,8 +58,8 @@ n.moveUp(\source)
 
 (n[\source].source = {
 /*	var rgb = (0!44) ++ (1!2);*/
-	var rgb = Hsv2rgb.kr(1/6, 1, 0.4).flatten ++ (0!57);
-	rgb.size.postln;
+	var rgb = [1, 0, 0] ++ (0!57);
+/*	rgb.size.postln;*/
 	(rgb * DC.kr(1));
 })
 
@@ -124,35 +124,13 @@ n.printChain
 	out.lag(2);
 })
 
-//    chan
-//        clr
-//           pan
-[0] = [0][0][0] + [1][0][0 - 1]
-[1] = [0][1][0] + [1][1][0 - 1]
-[2] = [0][2][0] + [1][2][0 - 1]
-[3] = [0][0][1] + [1][0][0]
-[4] = [0][1][1] + [1][1][0]
-[5] = [0][2][1] + [1][2][0]
-
-out[i] = panchans[0][i%3][(i/3).floor]
-			+ panchans[1][i%3][(i/3).floor-1]
-			+ panchans[2][i%3][(i/3).floor-2]
-
-y = [7, 8, 9];
-z = y.collect({|n| n+1})
-z
-
-111 222 333 444 ...
-[[1, 1, 1], [2, 2, 2], [3, 3, 3]]
-
-a = [[1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0]].flop
-a.flop
-
-
-
-[[[1, 1, 1], [2, 2, 2], [3, 3, 3]], [[1, 1, 1], [2, 2, 2], [3, 3, 3]]]
-
-
+(n[\rotor].source = {
+	var in = \in.kr(0!60);
+	var pos = LFSaw.kr(1/10);
+/*	var width = 2.2;*/	
+	// 20 channels in groups of 3
+	Rotator.kr(20, 3, in, pos, 7, 15).poll;
+})
 
 Ndef(\tester, {
 	var snd = DC.kr(1) * [1, 2, 3];
@@ -160,15 +138,3 @@ Ndef(\tester, {
 	snd[2].poll;
 });
 Ndef(\tester).free
-
-[1, 2, 3, 1, 2, 3, 1, 2, 3, ...] => PanAz(5):
-[[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3],...]
-[[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2]].flop.sum
-
-[r1, g1, b1, r2, g2, b3, r3, g3, b3]
-PanAz(3):
-[[r1_1, r1_2, r1_3], [g1_1, g1_2, g1_3], [b1_1, b1_2, b1_3], [r2_1, r2_2, r2_3], [g2_1, g2_2, g2_3], ...]
-.flop:
-[[r1_1, g1_1, b1_1, r2_1, g2_1, ...], [r1_2, g1_2, b1_2, r2_2, g2_2, ...], [r1_3, g1_3, b1_4, r2_3, g2_3, ...]]
-.sum:
-[]
