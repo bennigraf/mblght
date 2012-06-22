@@ -1,7 +1,5 @@
 So far:
 
-Bus for every value/device in patcher
-* write to buses using ndefs. works?? Yeah! Fucking Rocks!
 
 * summing-bus-object:
   Methods of summing: adding values & clipping them? Would work...
