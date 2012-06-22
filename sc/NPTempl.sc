@@ -24,16 +24,16 @@ NPTempl {
 			}, 
 			source: { |tmpl, args| // returning a source function
 				var fn = {
-/*					var in = \in.kr(0!tmpl.inChannels);*/
-					var in = SinOsc.kr(1/4)!tmpl.inChannels;
+					var in = \in.kr(0!tmpl.inChannels);
+/*					var in = SinOsc.kr(1/4)!tmpl.inChannels;*/
 					var width = \width.kr(2);
 					var ori = \ori.kr(-0.5);
-					var pos = \pos.kr(-0.5);
+					var pos = \pos.kr(0);
 					var inhlpr = { |i|
 						PanAz.kr(tmpl.out, in[i], pos, 1, width, ori);
 					}!(tmpl.inChannels);
 					inhlpr = inhlpr.flop.flatten;
-					inhlpr.poll;
+/*					inhlpr.poll;*/
 					inhlpr;
 				};
 				fn;

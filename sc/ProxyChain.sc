@@ -28,12 +28,17 @@ ProxyChain {
 	}
 	addNodeName { |name = nil, nodeproxy|
 		if(name.notNil, { 
-			nodenames.add(name -> nodeproxy);
+			if(nodenames[\name].isNil, {
+				nodenames.add(name -> nodeproxy);
+			});
 		});
 	}
 	
 	remove { |index|
 		var node;
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
 		if(nodes[index].notNil, {
 			if(nodes[index] == bottomprox, {
 				bottomprox = nil;
@@ -85,14 +90,14 @@ ProxyChain {
 		this.add(name, nodeproxy);
 	}
 	
-	addBefore { |index, nodeproxy|
+	addBefore { |index, name, nodeproxy|
 		if(index.isKindOf(Symbol), {
 			index = this.nodeIndexFromName(index);
 		});
 		
 		if((index > 1) || (index == 0 && topprox.isNil), {
 			nodes.insert(index, nodeproxy);
-			this.addNodeName(index, nodeproxy);
+			this.addNodeName(name, nodeproxy);
 		}, {
 			"couldn't add before!".postln;
 		});
@@ -100,7 +105,7 @@ ProxyChain {
 	}
 	
 	
-	addAfter { |index, nodeproxy|
+	addAfter { |index, name, nodeproxy|
 		if(index.isKindOf(Symbol), {
 			index = this.nodeIndexFromName(index);
 		});
@@ -110,7 +115,7 @@ ProxyChain {
 		}, {
 			this.add(nodeproxy);
 		});
-		this.addNodeName(index, nodeproxy);
+		this.addNodeName(name, nodeproxy);
 		this.updateChain;
 	} 
 	
@@ -228,14 +233,14 @@ ProxyChain {
 	clear { |sure = false|
 		if(sure.not, {
 			"Are you sure??".postln;
+		}, {
+			nodes.do({ |node, i|
+				node.clear;
+			});
+			nodes = List();
+			nodenames = Dictionary();
+			this.updateChain;
 		});
-	
-		nodes.do({ |node, i|
-			node.clear;
-		});
-		nodes = List();
-		nodenames = Dictionary();
-		this.updateChain;
 	}
 }
 /*
