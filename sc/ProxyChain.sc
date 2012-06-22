@@ -36,6 +36,9 @@ ProxyChain {
 	
 	remove { |index|
 		var node;
+		if(index.isKindOf(Symbol), {
+			index = this.nodeIndexFromName(index);
+		});
 		if(nodes[index].notNil, {
 			if(nodes[index] == bottomprox, {
 				bottomprox = nil;
@@ -230,14 +233,14 @@ ProxyChain {
 	clear { |sure = false|
 		if(sure.not, {
 			"Are you sure??".postln;
+		}, {
+			nodes.do({ |node, i|
+				node.clear;
+			});
+			nodes = List();
+			nodenames = Dictionary();
+			this.updateChain;
 		});
-	
-		nodes.do({ |node, i|
-			node.clear;
-		});
-		nodes = List();
-		nodenames = Dictionary();
-		this.updateChain;
 	}
 }
 /*
