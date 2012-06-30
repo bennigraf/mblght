@@ -190,7 +190,8 @@ LGui_Main {
 			.items_(["(default)", [""]]);
 			
 		ldbtn = Button().states_([["Load"]]);
-		svbtn = Button().states_([["Save"]]);
+		svbtn = Button().states_([["Save"]])
+			.action_({ this.saveStuff });
 		
 		view = VLayout(
 			StaticText().string_("Load/Save Setup").font_(Font.sansSerif(18, true)),
@@ -202,6 +203,65 @@ LGui_Main {
 		);
 		
 		^view;
+	}
+	
+	saveStuff {
+		// save:
+		// * patcher - name, connected Buffers, connected Output Devices (with arguments?)
+		// * devices - address, group
+/*		Patcher.all.at(\default).asCompileString*/
+		// as an event with .asCompileString:
+/*		(patcher: (name: \default, buffers: (['bufer1', 'buffer2']))).asCompileString*/
+		
+		var data = ();
+		
+		var ptchrs = Patcher.all;
+		
+		data.patchers = List();
+
+		ptchrs.keysValuesDo({ |patcherid, patcher|
+			var myPatcher = ();
+			var myTempDevices; //
+			// get patcher info:
+			myPatcher.name = patcherid;
+		
+			myPatcher.buffers = List();
+			patcher.buffers.do({ |buf, n|
+				var buffer = (classname: buf.class);
+				var devices = buf.devices;
+				buffer.devices = List();
+				devices.do({ |dev, m|
+					var device = ();
+					buffer.devices.add(dev.compileString);
+				});
+				myPatcher.buffers.add(buffer);
+			});
+			
+			myPatcher.devices = List();
+			myTempDevices = Dictionary();
+			patcher.devices.do({ |dev, n|
+				var myDev = (type: dev.device.type, address: dev.device.address);
+				myPatcher.devices.add(myDev);
+				myTempDevices.add(n -> dev);
+			});
+			
+			myPatcher.groups = List();
+			patcher.groups.keysValuesDo({ |grpname, devs|
+				var myGrp = (name: grpname, deviceIndizes: List());
+				devs.do({ |dev|
+					var devindx = myTempDevices.findKeyForValue(dev);
+					if(devindx.notNil, {
+						myGrp.deviceIndizes.add(devindx);
+					});
+				});
+				myPatcher.groups.add(myGrp);
+			});
+		
+			data.patchers.add(myPatcher);
+		});
+		
+		savedata = data.asCompileString;
+		
 	}
 	
 	updateView {
@@ -467,7 +527,7 @@ LGui_manageDevices {
 				var devTypeName = Device.typeNames.at(devslctr.value);
 				var grp = nil;
 				if(grpslist.value > 0, { grp = grpslist.items[grpslist.value]; });
-				patcher.addDevice(Device(devTypeName, addrTxt.value), grp);
+				patcher.addDevice(Device(devTypeName, addrTxt.value.asInteger), grp);
 				this.updateView();
 			});
 		rmvDevGrp = Button().states_([["Remove Device from Group"]])
