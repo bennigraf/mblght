@@ -156,9 +156,9 @@ LGui_Main {
 			.action_({ |btn|
 				var patcher = Patcher.all();
 				var check = true;
-				if(ptchrname.value.isNil, {
-					"No name given!".postln;
-					check = false;
+				if(ptchrname.value == "", {
+					ptchrname.string = "default";
+/*					check = false;*/
 				});
 				if(patcher[ptchrname.value.asSymbol].notNil, {
 					"Patcher already exists!".postln;
@@ -178,7 +178,6 @@ LGui_Main {
 			),
 			[addbtn, a:\topleft]
 		));
-		
 		
 		dialog.front;
 	}
@@ -334,8 +333,9 @@ LGui_SetupPatcher {
 	}
 	devOptionsWindow { |devclass, buffer|
 		var lilwin, argpairs, argpairlayout, addbtn;
+		var bounds = Window.availableBounds;
 		
-		lilwin = Window("Arguments for" + devclass.asString, 300@200);
+		lilwin = Window("Arguments for" + devclass.asString, Rect(bounds.width/2-150, bounds.height/2+100, 300, 200));
 		lilwin.layout = VLayout();
 		lilwin.layout.add(
 			StaticText().string_("Arguments needed for"+devclass.asString)
@@ -389,10 +389,175 @@ LGui_SetupPatcher {
 
 LGui_manageDevices {
 	
-	manageDevices { |patcher|
+	var window;
+	var updateActions;
+	var patcher;
+	
+	*new { |patcherid|
+		^super.new.init(patcherid);
+	}
+	
+	init { |patcherid|
+		updateActions = List();
+		patcher = Patcher.all.at(patcherid);
+		this.manageDevices();
+		this.updateView();
+	}
+	
+	manageDevices {
 		var window;
+		var bounds = Window.availableBounds;
 		
+		var grpslist, grpAdd, grpRmv;
 		
+		var devslist;
+		var devslctr;
+		var addrTxt, autoAddr, addBtn, rmvDevGrp, rmvBtn;
+		
+		window = Window("Manage Devices", Rect(bounds.width/2-200, bounds.height/2+50, 400, 400));
+		
+		grpslist = ListView().selectionMode_(\extended)
+			.action_({ |list|
+				this.updateView;
+			});
+		updateActions.add({
+			var val = grpslist.value ?? 0;
+			grpslist.items_(["(none)"] ++ patcher.groupNames).value_(val);
+		});
+		grpAdd = Button().states_([["Add Group"]])
+			.action_({ this.addGroup });
+		grpRmv = Button().states_([["Remove Group"]])
+			.action_({ 
+				if(grpslist.value.notNil && (grpslist.value > 0), {
+					patcher.removeGroup(patcher.groupNames.at(grpslist.value - 1));
+				});
+				this.updateView();
+			});
+		
+		devslist = ListView();
+		updateActions.add({
+			var items = [];
+			var devices;
+			if(grpslist.value > 0, {
+				devices = patcher.groups[grpslist.items[grpslist.value]];
+			}, {
+				// all devices if 'none' is selected
+				devices = patcher.devices;
+			});
+			devices.do({ |dev|
+				items = items.add(dev.device.type.asString + "- addr:" + dev.device.address);
+			});
+			devslist.items_(items);
+		});
+		
+		devslctr = PopUpMenu()
+			.items_(Device.typeNames().collect({ |name| name.asString+"("++Device.types.at(name).channels++"ch)" }))
+			.action_({this.updateView});
+		
+		addrTxt = TextField();
+		updateActions.add({
+			if(autoAddr.value, {
+				var devType = Device.types[Device.typeNames.at(devslctr.value)];
+				addrTxt.string_(patcher.nextFreeAddr(devType.channels));
+			});
+		});
+		autoAddr = CheckBox().value_(true);
+		addBtn = Button().states_([["Add Device"]])
+			.action_({
+				var devTypeName = Device.typeNames.at(devslctr.value);
+				var grp = nil;
+				if(grpslist.value > 0, { grp = grpslist.items[grpslist.value]; });
+				patcher.addDevice(Device(devTypeName, addrTxt.value), grp);
+				this.updateView();
+			});
+		rmvDevGrp = Button().states_([["Remove Device from Group"]])
+			.action_({
+				if(grpslist.value > 0, {
+					var group = grpslist.items[grpslist.value];
+					var devindex = devslist.value();
+					patcher.removeDeviceFromGroup(devindex, group);
+				});
+				this.updateView;
+			});
+		rmvBtn = Button().states_([["Remove Device"]])
+			.action_({
+				var devices, device, group, devIndx;
+				if(grpslist.value > 0, {
+					devices = patcher.groups[grpslist.items[grpslist.value]];
+					group = grpslist.items[grpslist.value];
+				}, {
+					devices = patcher.devices;
+				});	
+				device = devices[devslist.value];
+				patcher.devices.do({ |dev, n|
+					if(dev == device, { devIndx = n });
+				});
+/*				devIndx = patcher.devices.find([device]);*/
+/*				if(group.notNil, { patcher.removeDeviceFromGroup(devslist.value, group) });*/
+				patcher.removeDevice(devIndx);
+				this.updateView();
+			});
+
+		window.layout = VLayout(
+			StaticText().string_("Groups:").font_(Font.sansSerif(18, true)),
+			grpslist,
+			HLayout(grpAdd, grpRmv),
+			StaticText().string_("Devices:").font_(Font.sansSerif(18, true)),
+			devslist,
+			StaticText().string_("Add Device:").font_(Font.sansSerif(18, true)),
+			HLayout(StaticText().string_("Device-type:"), devslctr),
+			HLayout([StaticText().string_("Address:"), s:1], [addrTxt, s:1]),
+			HLayout(StaticText().string_("Auto-Address:"), [autoAddr, a:\right]),
+			addBtn,
+			HLayout(rmvDevGrp, rmvBtn)
+		);
 		window.front;
+	}
+	
+	addGroup {
+		var dialog;
+		var bounds = Window.availableBounds;
+		var addbtn, grpname;
+
+		dialog = Window("Add Patcher", Rect(bounds.width/2-200, bounds.height/2+50, 400, 100));
+
+		grpname = TextField();
+
+		addbtn = Button().states_([["Create Group"]])
+			.action_({ |btn|
+				var check = true;
+				patcher.groupNames.do({ |name|
+					if(name == grpname.string, {
+						check = false;
+						"Group exists already!".postln;
+					});
+				});
+				if(grpname.string == "", {
+					check = false;
+					"No Groupname given!".postln;
+				});
+				if(check, {
+					dialog.close;
+					patcher.addGroup(grpname.string);
+					this.updateView();
+				});
+			});
+
+		dialog.layout_(VLayout(
+			HLayout(
+				StaticText().string_("Group name:"),
+				grpname
+			),
+			[addbtn, a:\topleft]
+		));
+
+		dialog.front;
+	}
+
+	updateView {
+		// actions to update the view...
+		updateActions.do({ |ua|
+			ua.value();
+		});
 	}
 }

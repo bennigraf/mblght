@@ -175,33 +175,74 @@ Patcher {
 	}
 	
 	removeDevice { |index|
+		groups.keysValuesDo({ |grpname, devices|
+			devices.do({ |dev, n|
+				if(dev == devices[index], {
+					this.removeDeviceFromGroup(n, grpname);
+				});
+			});
+		});
 		devices[index][\routine].stop;
 		this.freeBusesForDevice(devices[index]);
 		devices.removeAt(index);
 	}
 	
+	nextFreeAddr { |numChans = 1|
+		var chans = nil!512;
+		var freeChan = nil;
+		var cntr, n;
+		devices.do({ |dev|
+			var channels = Device.types.at(dev.device.type).at(\channels);
+			var address = dev.device.address.asInteger;
+			for(address, (address + channels - 1), { |n|
+				chans[n] = 1;
+			});
+		});
+		// 2nd approach: Step through chans, run counter that adds up if channel is free and otherwise resets, once counter = numChans -> found free slot!
+		cntr = 0;
+		n = 0;
+		while({(cntr < numChans) && (n < 512)}, {
+			if(chans[n].isNil, {
+				cntr = cntr + 1;
+			}, {
+				cntr = 0;
+			});
+			n = n + 1;
+		});
+		if(cntr == numChans, {
+			// found one!
+			freeChan = n - numChans;
+		});
+		^freeChan;
+	}
 	
+	
+	groupNames { 
+		var names = [];
+		groups.keysValuesDo({ |name|
+			names = names.add(name)
+		});
+		^names;
+	}
 	addGroup { |groupname|
 		if(groups.at(groupname.asSymbol).isNil, {
 			groups.put(groupname.asSymbol, List());
 		});
 	}
-/*	groups {*/
-		
-/*	}*/
 	removeGroup { |group|
 		if(group.isKindOf(Symbol), {
-			groups.removeAt(groups.find([group]));
+			groups.removeAt(group);
 		});
 		if(group.isKindOf(Integer), {
-			groups.removeAt(group);
+			"fix me!".postln;
+/*			groups.removeAt(group);*/
 		});
 	}
 	addDeviceToGroup { |device, group|
 		groups[group].add(device);
 	}
-	removeDeviceFromGroup { |device, group|
-		groups[group].removeAt(group);
+	removeDeviceFromGroup { |deviceIndx, group|
+		groups[group].removeAt(deviceIndx);
 	}
 	
 	numDevices { |group = nil|

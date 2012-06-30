@@ -15,7 +15,7 @@ Device {
 		//  channel - holds to total number of dmx channels used by this device
 		//  numArgs - holds number of arguments each method expects
 		//  init - holds the init method which i.e. can set some default values
-		Device.addType(\smplrgbpar, (
+		Device.addType(\smplrgb, (
 			channels: 3,
 			numArgs: (color: 3),
 			color: { |self, args|
@@ -114,6 +114,14 @@ Device {
 			types = IdentityDictionary();
 		});
 		^types;
+	}
+	*typeNames {
+		var myTypes = [];
+/*		types.postln;*/
+		types.keysValuesDo({|name, dev|
+			myTypes = myTypes.add(name);
+		});
+		^myTypes;
 	}
 	
 	setDmx { |addr, value|
