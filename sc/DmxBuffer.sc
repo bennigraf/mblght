@@ -8,29 +8,20 @@
 */
 DmxBuffer {
 	
-	// classvars
-	classvar x = 0;
-	
 	// some change...
 	
 	// instance vars
 	var buffer;
-	var devices;
+	var <devices;
 	var runner;
 	
 	var >fps = 20; // fps to aim for
 	
-	// class methods
-	*classmethoda {
-		
+	classvar <knownDevices;
+	
+	*initClass {
+		knownDevices = [OlaPipe, RainbowSerial];
 	}
-	
-	
-	// instance methods 
-	instancemethodb {
-		
-	}
-	
 	
 	*new {
 		^super.new.init();
@@ -43,15 +34,21 @@ DmxBuffer {
 		runner.play;
 	}
 	
+	close {
+		devices.size.do({ |n|
+			this.removeDevice(n);
+		});
+		runner.stop();
+	}
+	
 	addDevice { |device|
 		devices.add(device);
 	}
 	removeDevice { |index|
-		devices[index].close;
-		devices.removeAt(index);
-	}
-	devices { 
-		^devices;
+		if(devices[index].notNil, {
+			devices[index].close;
+			devices.removeAt(index);
+		})
 	}
 	
 	makeRunner {
@@ -68,9 +65,9 @@ DmxBuffer {
 					hits = hits + 1;
 					if(thisThread.seconds - lasttime  > waittime, {
 						if(hits > 0, {
-							("fps ca: "++(hits / waittime)).postln;
+/*							("fps ca: "++(hits / waittime)).postln;*/
 						}, {
-							("fps < "++waittime++"!!").postln;
+/*							("fps < "++waittime++"!!").postln;*/
 						});
 						hits = 0;
 						lasttime = thisThread.seconds;
@@ -139,6 +136,7 @@ OlaPipe {
 	var <universe = 0;
 	var pipe;
 	
+	
 	*new { | myUniverse = 0|
 		^super.new.init(myUniverse);
 	}
@@ -166,7 +164,13 @@ OlaPipe {
 		}, {
 			"no pipe!".postln;
 		});
-	}	
+	}
+	
+	describe { 
+		// returns string that describes an instance of the object
+		var str = "Universe: "++universe;
+		^str;
+	}
 }
 
 

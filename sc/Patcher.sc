@@ -20,7 +20,7 @@ Patcher {
 	var <devices;
 	var <groups;
 	var <id;
-	var buffers; // holds DMXBuffer objects
+	var <buffers; // holds DMXBuffer objects
 	var oscfuncs;
 	var <busses;
 	var server; // holds default server since patcher uses busses!
@@ -65,6 +65,23 @@ Patcher {
 		*/
 	}
 	
+	end {
+		// frees buses, stop routines, remove devices?
+		devices.do({ |dev|
+			dev[\routine].stop;
+			this.freeBusesForDevice(dev);
+		});
+		buffers.size.do({ |n|
+			buffers.removeAt(n);
+		});
+		all.removeAt(id);
+		if(default == this, {
+			if(all.size > 0, {
+				default = all[all.keys.asArray.at(0)];
+			});
+		});
+	}
+	
 	addBuffer { |buffer|
 		// a buffer must react to the set method!
 		buffers.add(buffer);
@@ -75,6 +92,10 @@ Patcher {
 		buffers.do({ |buf|
 			buf.set(dmxData, addr);
 		});
+	}
+	removeBuffer { |index|
+		buffers.at(index).close();
+		buffers.removeAt(index);
 	}
 	
 	addDevice { |myDevice, myGroup|
@@ -92,6 +113,7 @@ Patcher {
 		
 		device[\device] = myDevice;
 		device[\buses] = buses;
+		device[\routine] = routine;
 		
 		devices.add(device);
 		deviceNum = devices.size - 1;
@@ -125,28 +147,39 @@ Patcher {
 		});
 		^buses;
 	}
+	freeBusesForDevice { |myDevice|
+		myDevice[\buses].do({ |bus|
+			bus.free;
+		});
+	}
 	makeRoutineForDevice { |device, buses|
 		var routine = Routine.run({
 			var val, lastval;
 			inf.do({
+				var changed = false;
 				buses.keysValuesDo({ |method, bus|
 					val = bus.getnSynchronous;
 					if(val != lastval, {
-						device.action(method, bus.getnSynchronous);
+						device.action(method, val);
+						changed = true;
 					});
 					lastval = val;
 				});
-				this.setBuffers(device.getDmx, device.address);
+				if(changed, {
+					this.setBuffers(device.getDmx, device.address);
+				});
 				(1/30).wait;
 			});
 		});
 		^routine;
 	}
 	
-	
 	removeDevice { |index|
+		devices[index][\routine].stop;
+		this.freeBusesForDevice(devices[index]);
 		devices.removeAt(index);
 	}
+	
 	
 	addGroup { |groupname|
 		if(groups.at(groupname.asSymbol).isNil, {
@@ -329,7 +362,7 @@ Patcher {
 	
 	// Or: a patcher registers busses for methods. Then NodeProxys need to play to those busses.
 	// (A NodeProxy with Out.kr appareantly doesn't even create it's own private bus, see NP.busLoaded.)
-	
+	// deprecated!!
 	makeBusForMethod { |method, numArgs = 1, group = nil, channels = 1|
 		
 		var bus = (); // bus proto...

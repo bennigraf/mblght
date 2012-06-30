@@ -2,8 +2,8 @@
 Routine.run({
 	d = DmxBuffer.new();
 	d.fps = 30;
-/*	o = OlaPipe(0);*/
-/*	d.addDevice(o);*/
+	o = OlaPipe(0);
+	d.addDevice(o);
 	s.waitForBoot({
 		p = Patcher(\stage);
 		s.sync;
@@ -20,7 +20,7 @@ Routine.run({
 )
 p.message((method: \color, data: [1, 0, 1]))
 
-n.clear
+n.clear(true)
 
 n = ProxyChain();
 
@@ -50,7 +50,8 @@ n.moveUp(\source)
 /*	[DC.kr(1), DC.kr(0), DC.kr(0)]*/
 	var hsv;
 	var rgb = { |i|
-		Hsv2rgb.kr(SinOsc.kr(1/4, pi / 20 * i, 0.1, 0.7), 1, 0.6);
+		var osc = SinOsc.kr(1/13, pi / 20 * i);
+		Hsv2rgb.kr(osc.range(0.5, 0.8), 1, osc.range(0, 0.31));
 	}!20;
 /*	rgb.poll;*/
 	rgb.flatten;
@@ -89,7 +90,8 @@ n.add(\rotor, NodeProxy.control(s, 60))
 n.moveUp(\rotor)
 (n[\rotor].source = {
 	var in = \in.kr(0!60);
-	var pos = LFSaw.kr(1/20);
+/*	var pos = LFSaw.kr(1/20);*/
+	var pos = LFNoise0.kr(7) * Trig1.kr(Dust.kr(1), 0.5);
 /*	var hlpr = { |i| 
 		PanAz.kr(20, channels[i], pos);
 	}!20;*/
@@ -126,15 +128,13 @@ n.printChain
 
 (n[\rotor].source = {
 	var in = \in.kr(0!60);
-	var pos = LFSaw.kr(1/10);
+/*	var pos = LFSaw.kr(1/10);*/
 /*	var width = 2.2;*/	
+	var trig = Dust.kr(1/2);
+	var pos = Trig1.kr(trig, 0.15) * TRand.kr(0, 2, trig);
 	// 20 channels in groups of 3
-	Rotator.kr(20, 3, in, pos, 7, 15).poll;
+	Rotator.kr(20, 3, in, pos, width: 2, lag: 0);
 })
 
-Ndef(\tester, {
-	var snd = DC.kr(1) * [1, 2, 3];
-	snd = PanAz.kr(20, snd, MouseY.kr(0, 2));
-	snd[2].poll;
-});
-Ndef(\tester).free
+n[\rotor].pause;
+n[\rotor].resume
