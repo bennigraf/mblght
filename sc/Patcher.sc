@@ -71,8 +71,8 @@ Patcher {
 			dev[\routine].stop;
 			this.freeBusesForDevice(dev);
 		});
-		buffers.size.do({ |n|
-			buffers.removeAt(n);
+		buffers.size.do({
+			buffers.pop.close;
 		});
 		all.removeAt(id);
 		if(default == this, {

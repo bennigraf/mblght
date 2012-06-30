@@ -35,8 +35,8 @@ DmxBuffer {
 	}
 	
 	close {
-		devices.size.do({ |n|
-			this.removeDevice(n);
+		devices.size.do({
+			devices.pop.close;
 		});
 		runner.stop();
 	}
@@ -171,6 +171,11 @@ OlaPipe {
 		var str = "Universe: "++universe;
 		^str;
 	}
+	
+	compileString {
+		var str = this.class.asCompileString++".new("++universe++")";
+		^str;
+	}
 }
 
 
@@ -233,6 +238,11 @@ RainbowSerial {
 			sp.putAll(realOutData);
 		});
 		
+	}
+
+	compileString {
+		var str = this.class.asCompileString++".new(0)";
+		^str;
 	}
 	
 }

@@ -17,6 +17,7 @@ LGui_Main {
 	var window;
 	var server;
 	var updateActions;
+	var settingsFile;
 	
 	*new {
 		^super.new.init();
@@ -26,8 +27,21 @@ LGui_Main {
 		server = Server.default;
 		updateActions = List();
 		window = Window.new("Lighting Controller", Rect(400, 400, 400, 400)).front;
+		settingsFile = Platform.userConfigDir+/+"LGuiConfig.scd";
+		this.checkForSettings;
 		this.makeDefaultWindow();
 		this.updateView();
+	}
+	
+	checkForSettings {
+		var emptySettings;
+		if(File.exists(settingsFile).not, {
+			// create default (empty) settings file...
+			emptySettings = ().asCompileString;
+			File.use(settingsFile, "w", { |f|
+				f.write(emptySettings);
+			});
+		});
 	}
 	
 	makeDefaultWindow {
@@ -185,18 +199,68 @@ LGui_Main {
 	theSaviour {
 		var view;
 		var slctr, ldbtn, svbtn;
+		var settingsObj, makeitems;
 		
-		slctr = PopUpMenu()
-			.items_(["(default)", [""]]);
+		slctr = PopUpMenu();
+		
+		makeitems = {
+			var items = [];
+			File.use(settingsFile, "r", { |f|
+				settingsObj = f.readAllString.interpret;
+			});
+			settingsObj.keysValuesDo({ |name, obj|
+				items = items.add(name);
+			});
+/*			Archive.read("LGuiArchive.scd");
+			Archive.global.dictionary.keysValuesDo({ |name, obj|
+				items = items.add(name);
+			});*/
+			slctr.items_(["New..."]++items);
+		};
+		makeitems.value();
+
+/*		slctr.items_(["New..."]++makeitems.value());*/
 			
-		ldbtn = Button().states_([["Load"]]);
-		svbtn = Button().states_([["Save"]])
-			.action_({ this.saveStuff });
+		ldbtn = Button().states_([["Load"]])
+			.action_({
+				if(slctr.value > 0, {
+					this.loadSettings(slctr.items[slctr.value]);
+				})
+			});
+		svbtn = Button().states_([["Save"], ["Saving..."], ["Saved!", Color.black, Color.green]])
+			.action_({ 
+				var name;
+				if(slctr.items.at(slctr.value) == "New...", {
+					LGuiDialog("Name new preset", { |dialog|
+						var txtFld, btn;
+						txtFld = TextField();
+						btn = Button().states_([["Save new preset"]])
+							.action_({
+								this.saveSettings(txtFld.value);
+								dialog.close;
+								makeitems.value();
+							});
+						dialog.layout_(
+							VLayout(txtFld, btn);
+						);
+					});
+				}, {
+					name = slctr.items[slctr.value];
+					this.saveSettings(name);
+					makeitems.value();
+					Routine.run({
+						2.do({
+							defer{svbtn.value = 2};
+							0.1.wait;
+							defer{svbtn.value = 0};
+							0.1.wait;
+						});
+					});
+				});
+			});
 		
 		view = VLayout(
 			StaticText().string_("Load/Save Setup").font_(Font.sansSerif(18, true)),
-/*			StaticText(nil, 200@20).string_("Patcher:")
-				.font_(Font.sansSerif(18, true));*/
 			HLayout(
 				slctr, ldbtn, svbtn
 			)
@@ -204,8 +268,62 @@ LGui_Main {
 		
 		^view;
 	}
-	
-	saveStuff {
+	loadSettings { |name|
+		var settings, file;
+		file = File.open(settingsFile, "r");
+		settings = file.readAllString.interpret;
+		file.close;
+/*		Archive.read("LGuiArchive.scd");*/
+		Patcher.all.do({ |ptchr|
+			ptchr.end;
+		});
+		server.waitForBoot({
+			this.applySettings(settings[name.asSymbol]);
+/*			this.applySettings(Archive.global[name.asSymbol]);*/
+			this.updateView;
+		});
+	}
+	applySettings { |settings|
+		settings.patchers.do({ |ptchr|
+			var patcher;
+			patcher = Patcher.new(ptchr.name);
+			ptchr.buffers.do({ |buf|
+				var instance = buf.classname.new;
+				buf.devices.do({ |adevCompileString|
+					var dv = adevCompileString.interpret;
+					instance.addDevice(dv);
+				});
+				patcher.addBuffer(instance);
+			});
+			ptchr.devices.do({ |dev|
+				patcher.addDevice(Device.new(dev.type.asSymbol, dev.address););
+			});
+			ptchr.groups.do({ |grp|
+				patcher.addGroup(grp.name);
+				grp.deviceIndizes.do({ |indx|
+					patcher.addDeviceToGroup(patcher.devices.at(indx), grp.name);
+				});
+			});
+		});
+	}
+	saveSettings { |name|
+		var file, savedData;
+		file = File.open(settingsFile, "r");
+		savedData = file.readAllString.interpret;
+		file.close;
+		savedData[name.asSymbol] = this.saveObject;
+		savedData = savedData.asCompileString;
+		file = File.open(settingsFile, "w"); // open again to empty contents...
+		file.write(savedData);
+		file.close;
+/*		var data;
+		Archive.read("LGuiArchive.scd");
+		Archive.global[name.asSymbol] = this.saveObject;
+		Archive.write("LGuiArchive.scd");*/
+	}
+/*	Platform.userConfigDir*/
+/*	Platform.resourceDir*/
+	saveObject {
 		// save:
 		// * patcher - name, connected Buffers, connected Output Devices (with arguments?)
 		// * devices - address, group
@@ -214,11 +332,8 @@ LGui_Main {
 /*		(patcher: (name: \default, buffers: (['bufer1', 'buffer2']))).asCompileString*/
 		
 		var data = ();
-		
 		var ptchrs = Patcher.all;
-		
 		data.patchers = List();
-
 		ptchrs.keysValuesDo({ |patcherid, patcher|
 			var myPatcher = ();
 			var myTempDevices; //
@@ -259,9 +374,10 @@ LGui_Main {
 		
 			data.patchers.add(myPatcher);
 		});
-		
-		savedata = data.asCompileString;
-		
+		^data;
+	}
+	saveString {
+		^this.saveObject.asCompileString;
 	}
 	
 	updateView {
@@ -620,4 +736,20 @@ LGui_manageDevices {
 			ua.value();
 		});
 	}
+}
+
+LGuiDialog {
+	var window;
+	
+	*new { |title, fn|
+		^super.new.init(title, fn);
+	}
+	
+	init { |title, fn|
+		var bounds = Window.availableBounds;
+		window = Window(title, Rect(bounds.width/2-100, bounds.height/2+50, 200, 100));
+		fn.value(window);
+		window.front;
+	}
+	
 }
