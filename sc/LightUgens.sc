@@ -72,4 +72,47 @@ Rotator : UGen {
 	}
 }
 		
+MultiPanAz : UGen {
+	classvar <rate = \control;
+	
+	*kr {
+		arg channels = 2,
+			in = [],
+			pos = 0,
+			width = 2,
+			ori = -0.5;
+			
+		var hlpr;
+		var inChannels = in.size;
 		
+		hlpr = { |i|
+			PanAz.kr(channels, in[i], pos, 1, width, ori);
+		}!inChannels;
+		hlpr = hlpr.flop.flatten;
+		
+		^hlpr;
+	}
+}		
+
+Mirror : UGen {
+	classvar <rate = \control;
+	
+	*kr {
+		arg channels = 2,
+			groups = 3,
+			ins = [],
+			wet = 1; // 0 dry, 1 wet
+		
+		var outs = 0!60;
+		
+		channels.do{ |i|
+			var ofst = (19-i)*3;
+			groups.do({|j| 
+				var orign = ins[i*3+j];
+				var mirr = ins[ofst+j];
+				outs[i*3+j] = (1 - wet * orign) + (wet * mirr);
+			});
+		};
+		^outs;
+	}
+}
