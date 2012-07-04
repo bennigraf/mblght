@@ -10,8 +10,6 @@ LGui {
 }
 
 
-
-
 LGui_Main {
 	
 	var window;
