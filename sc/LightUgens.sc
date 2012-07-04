@@ -116,3 +116,49 @@ Mirror : UGen {
 		^outs;
 	}
 }
+
+Blitzen : UGen {
+	classvar <rate = \control;
+	
+	*kr {
+		arg channels = 10, groups = 3,
+			rate = 1,
+			pos = 0,
+			width = 0,
+			in;
+		
+		// spread applys sine-like verteilungsglocke over all channels which can be moved
+		// around with pos by moving it's phase and it's width is controlled by pow(width),
+		// which 'overdrives' the whole thing (or underdrives for width < 1).
+		
+		// offst = 0..2
+		var spread = { |offst| SinOsc.kr(0, offst * pi/2, 0.5, 0.5) ** width.lincurve(0, channels, 0, 100, 8) };
+		var trigs = { |n| 
+			var amp = spread.value(1/channels*n*2);
+			var freq = rate * amp;
+			Dust.kr(freq) * spread.value(1/channels*n*2);
+		}!channels;
+		
+		var carrier = Trig1.kr(trigs, dur: 0.1);
+
+		var sig, out = 0!(channels*groups);
+		// ins: 'white' (if none), else use dust as 'amp'
+		if(in.isNil, {
+			sig = DC.kr(1)!groups;
+		}, {
+			// check if in signal is an array, could also be a float
+			if(in.size > 0, {
+				sig = in;
+			}, {
+				sig = [in];
+			});
+		});
+		
+		out = { |n|
+			out[n] = carrier[(n/groups).floor.asInteger];
+/*			out[n] = sig.wrapAt[n] * carrier[(n/groups).floor.asInteger];*/
+		}!(channels * groups);
+		
+		^out;
+	}
+}
