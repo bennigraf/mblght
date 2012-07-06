@@ -125,21 +125,28 @@ Blitzen : UGen {
 			rate = 1,
 			pos = 0,
 			width = 0,
-			in;
+			in,
+			ori = -0.5;
 		
 		// spread applys sine-like verteilungsglocke over all channels which can be moved
 		// around with pos by moving it's phase and it's width is controlled by pow(width),
 		// which 'overdrives' the whole thing (or underdrives for width < 1).
 		
 		// offst = 0..2
-		var spread = { |offst| SinOsc.kr(0, offst * pi/2, 0.5, 0.5) ** width.lincurve(0, channels, 0, 100, 8) };
+		var spread = { |offst| 
+			var myOri = (pi/channels*ori*2) * -1;
+			SinOsc.kr(0, offst * pi +(pi/2) +myOri, 0.5, 0.5) ** width.lincurve(0, channels, 100, 0, -8) };
+			// 				\-- offset between 0 and 2
+			// 							\-- moves whole bell shape so that max is on 0 (cosine-like!)
+			//									\-- moves bell shape like ori in PanAz
 		var trigs = { |n| 
-			var amp = spread.value(1/channels*n*2);
+			var amp = spread.value(1/channels*n*2 + pos);
 			var freq = rate * amp;
-			Dust.kr(freq) * spread.value(1/channels*n*2);
+			Dust.kr(freq) * amp;
 		}!channels;
 		
-		var carrier = Trig1.kr(trigs, dur: 0.1);
+/*		var carrier = Trig.kr(trigs, dur: 0.051);*/
+		var carrier = Decay.kr(Trig.kr(trigs, dur: 0.024), 0.05);
 
 		var sig, out = 0!(channels*groups);
 		// ins: 'white' (if none), else use dust as 'amp'
@@ -155,10 +162,13 @@ Blitzen : UGen {
 		});
 		
 		out = { |n|
-			out[n] = carrier[(n/groups).floor.asInteger];
-/*			out[n] = sig.wrapAt[n] * carrier[(n/groups).floor.asInteger];*/
+/*			out[n] = carrier[(n/groups).floor.asInteger];*/
+/*			carrier[(n/groups).floor.asInteger];*/
+			sig.wrapAt(n) * carrier[(n/groups).floor.asInteger];
 		}!(channels * groups);
-		
+/*		myAmp.poll;*/
 		^out;
+/*		^myAmp;*/
+/*		^sig;*/
 	}
 }
