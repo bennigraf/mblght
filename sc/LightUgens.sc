@@ -161,7 +161,6 @@ Blitzen : UGen {
 				sig = [in];
 			});
 		});
-		
 		out = { |n|
 /*			out[n] = carrier[(n/groups).floor.asInteger];*/
 /*			carrier[(n/groups).floor.asInteger];*/
