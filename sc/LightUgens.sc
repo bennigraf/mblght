@@ -139,7 +139,7 @@ Blitzen : UGen {
 			Dust.kr(freq) * spread.value(1/channels*n*2);
 		}!channels;
 		
-		var carrier = Trig1.kr(trigs, dur: 0.1);
+		var carrier = Trig.kr(trigs, dur: 0.05);
 
 		var sig, out = 0!(channels*groups);
 		// ins: 'white' (if none), else use dust as 'amp'

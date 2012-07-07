@@ -11,3 +11,4 @@ Ndef(\blitz).source = {
 	});
 }
 )
+LGui.new
