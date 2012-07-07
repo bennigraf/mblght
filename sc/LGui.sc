@@ -694,38 +694,37 @@ LGui_manageDevices {
 		var addbtn, grpname;
 
 		dialog = Window("Add Patcher", Rect(bounds.width/2-200, bounds.height/2+50, 400, 100));
-
-		grpname = TextField();
-
-		addbtn = Button().states_([["Create Group"]])
-			.action_({ |btn|
-				var check = true;
-				patcher.groupNames.do({ |name|
-					if(name == grpname.string, {
+		
+		LGuiDialog("Add Group", {|dialog|
+			var grpname, addbtn;
+			grpname = TextField();
+			addbtn = Button().states_([["Create Group"]])
+				.action_({ |btn|
+					var check = true;
+					patcher.groupNames.do({ |name|
+						if(name == grpname.string, {
+							check = false;
+							"Group exists already!".postln;
+						});
+					});
+					if(grpname.string == "", {
 						check = false;
-						"Group exists already!".postln;
+						"No Groupname given!".postln;
+					});
+					if(check, {
+						dialog.close;
+						patcher.addGroup(grpname.string);
+						this.updateView();
 					});
 				});
-				if(grpname.string == "", {
-					check = false;
-					"No Groupname given!".postln;
-				});
-				if(check, {
-					dialog.close;
-					patcher.addGroup(grpname.string);
-					this.updateView();
-				});
-			});
-
-		dialog.layout_(VLayout(
-			HLayout(
-				StaticText().string_("Group name:"),
-				grpname
-			),
-			[addbtn, a:\topleft]
-		));
-
-		dialog.front;
+			dialog.layout_(VLayout(
+				HLayout(
+					StaticText().string_("Group name:"),
+					grpname
+				),
+				[addbtn, a:\topleft]
+			));
+		});
 	}
 
 	updateView {
