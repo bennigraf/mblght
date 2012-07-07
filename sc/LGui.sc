@@ -209,6 +209,11 @@ LGui_Main {
 			settingsObj.keysValuesDo({ |name, obj|
 				items = items.add(name);
 			});
+			// load "default" settings on boot, if they exist...
+			if(settingsObj[\default].notNil, {
+				this.loadSettings(\default);
+			});
+			
 /*			Archive.read("LGuiArchive.scd");
 			Archive.global.dictionary.keysValuesDo({ |name, obj|
 				items = items.add(name);
@@ -248,10 +253,8 @@ LGui_Main {
 					makeitems.value();
 					Routine.run({
 						2.do({
-							defer{svbtn.value = 2};
-							0.1.wait;
-							defer{svbtn.value = 0};
-							0.1.wait;
+							defer{svbtn.value = 2};	0.1.wait;
+							defer{svbtn.value = 0};	0.1.wait;
 						});
 					});
 				});
