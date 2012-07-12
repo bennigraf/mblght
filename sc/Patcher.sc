@@ -24,6 +24,7 @@ Patcher {
 	var oscfuncs;
 	var <busses;
 	var server; // holds default server since patcher uses busses!
+	var <>fps; // fps to get data from busses with
 	classvar <default; // default (usually first) Patcher...
 	classvar <all; // holds all opened patchers for reference...
 	
@@ -41,6 +42,7 @@ Patcher {
 		buffers = List();
 		busses = List();
 		server = Server.default;
+		fps = 60;
 		
 		if(default==nil, { // make this the default patcher if none is there...
 			default = this;
@@ -168,7 +170,7 @@ Patcher {
 				if(changed, {
 					this.setBuffers(device.getDmx, device.address);
 				});
-				(1/30).wait;
+				(1/fps).wait;
 			});
 		});
 		^routine;
@@ -262,7 +264,7 @@ Patcher {
 			if(dev.device.hasMethod(method), {
 				buses = buses.add(dev.buses[method]);
 			}, {
-				buses = buses.add("false");
+/*				buses = buses.add("false");*/
 			});
 		});
 		^buses;
@@ -452,7 +454,7 @@ Patcher {
 						this.message(message);
 					});
 				});
-				(1/30).wait;
+				(1/fps).wait;
 			});
 		});
 		

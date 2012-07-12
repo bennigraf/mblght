@@ -15,7 +15,7 @@ DmxBuffer {
 	var <devices;
 	var runner;
 	
-	var >fps = 20; // fps to aim for
+	var >fps = 60; // fps to aim for
 	
 	classvar <knownDevices;
 	
