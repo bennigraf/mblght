@@ -25,6 +25,59 @@ Device {
 				self.setDmx(2, (args[2] * 255).round.asInteger);
 			}
 		));
+		Device.addType(\waldpar, (
+			channels: 6,
+			numArgs: (color: 3),
+			color: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(0, (args[0] * 255).round.asInteger);
+				self.setDmx(1, (args[1] * 255).round.asInteger);
+				self.setDmx(2, (args[2] * 255).round.asInteger);
+			},
+			init: { |self|
+				self.setDmx(3, 0); // color-shifter??
+				self.setDmx(4, 0); // shutter
+				self.setDmx(5, 0); // macro
+			}
+		));
+		Device.addType(\waldbarInit, (
+			channels: 11,
+			numArgs: (),
+			init: { |self|
+				// set intensity of whole bar to FL
+				self.setDmx(10, 255);
+			}
+		));
+		Device.addType(\waldbar, (
+			channels: 3,
+			numArgs: (color: 3),
+			color: { |self, args|
+				self.setDmx(0, (args[0] * 255).round.asInteger);
+				self.setDmx(1, (args[1] * 255).round.asInteger);
+				self.setDmx(2, (args[2] * 255).round.asInteger);
+			}
+		));
+		Device.addType(\waldfog, (
+			channels: 1,
+			numArgs: (fog: 1),
+			fog: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(0, (args[0]*255).round.asInteger);
+			},
+			init: {|self| self.setDmx(0, 0) }
+		));
+		Device.addType(\waldblitz, (
+			channels: 2,
+			numArgs: (blitz: 1),
+			blitz: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(0, (args[0] * 255).round.asInteger);
+			},
+			init: { |self| 
+				self.setDmx(0, 255);
+				self.setDmx(1, 255); // set intens to fl
+			}
+		));
 		Device.addType(\robeCw1200E, (
 			channels: 17,
 			numArgs: (color: 3, cmyk: 4, strobe: 1, zoom: 1),
