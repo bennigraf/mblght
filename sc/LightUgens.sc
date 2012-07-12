@@ -103,14 +103,14 @@ Mirror : UGen {
 			ins = [],
 			wet = 1; // 0 dry, 1 wet
 		
-		var outs = 0!60;
+		var outs = 0!(channels*groups);
 		
 		channels.do{ |i|
-			var ofst = (19-i)*3;
+			var ofst = (channels-1-i)*groups;
 			groups.do({|j| 
-				var orign = ins[i*3+j];
+				var orign = ins[i*groups+j];
 				var mirr = ins[ofst+j];
-				outs[i*3+j] = (1 - wet * orign) + (wet * mirr);
+				outs[i*groups+j] = (1 - wet * orign) + (wet * mirr);
 			});
 		};
 		^outs;
