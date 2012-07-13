@@ -36,10 +36,40 @@ Patcher.all.at(\waldstock).busesForGroupMethod(\ring, \color).do({ |bus|
 	bus.setn([0, 1, 0])
 })
 Patcher.all.at(\waldstock).busesForGroupMethod(\stage, \color).do({ |bus|
-	bus.setn([0, 0, 0])
+	bus.setn([0, 0, 1])
 })
 Patcher.all.at(\waldstock).busesForMethod(\color).do({|bus|
 	bus.setn([1, 0, 0]);
 })
 
 
+
+m = ProxyChain()
+m.add(\player, NodeProxy(s))
+m.stickToBottom();
+m[\player].source = {
+	var in = \in.kr(0!18);
+	Patcher.all.at(\waldstock).busesForGroupMethod(\stage, \color).do({|bus, i|
+		var offset = i * 3;
+		Out.kr(bus, [in[offset], in[offset+1], in[offset+2]]);
+	});
+}
+m.add(\src, NodeProxy.control(s, 18))
+m.printChain
+m[\src].source = {
+/*	([0, 0.5, 1]!6).flatten * DC.kr(1);*/
+	var trigs = Impulse.kr(1/2) +
+				Impulse.kr(1/4, 2.5/8) +
+				Impulse.kr(1/4, 1/8);
+	var trigs2 = Impulse.kr(1/4, 3/4);
+	var clr = Hsv2rgb.kr(0, 1, 1) * Decay.kr(trigs, 0.5);
+	var out = {|n|
+		clr * DelayL.kr(clr, 0.3, 0.3/3*n);
+	}!3;
+/*	var rlout = Mirror.kr(6, 3, (out ++ out).flatten, 1);*/
+	out = (out ++ out).flatten;
+	out = out + (([0, 0, 1]!6).flatten * Decay.kr(trigs2, 1));
+	out;
+}
+m.remove(\src)
+m.clear(true)
