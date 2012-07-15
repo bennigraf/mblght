@@ -1,5 +1,5 @@
-n = ProxyChain();
-
+n = ProxyChain().addPlayer(\waldstock, \ring, \color, 16, 3);
+Patcher.all.at(\waldstock).message((method: \color, data: [0.031, 0.051, 0.1]/5))
 n.clear(true)
 
 n.add(\player, NodeProxy(s));
@@ -15,15 +15,15 @@ n.stickToBottom();
 n.printChain
 
 
-n.add(\rev, NodeProxy.control(s, 60))
+n.add(\rev, NodeProxy.control(s, 48))
 n.remove(\rev)
 (n[\rev][0] = { 
 	var trig = Dust.kr(1);
 	var src = ({ TRand.kr(0.0, 1.0, trig) }!3 * 2 * Decay.kr(trig, 4)).clip;
 	
-	var ins = MultiPanAz.kr(20, src, TRand.kr(0.0, 2.0, trig));
-	var outs = 0!60;
-	20.do({ |c|
+	var ins = MultiPanAz.kr(16, src, TRand.kr(0.0, 2.0, trig));
+	var outs = 0!48;
+	16.do({ |c|
 /*		var revSignl = max(max(ins[c], ins[c+1]), ins[c+2]) * SinOsc.ar(1000);*/
 		var revSignl = max(max(src[0], src[1]), src[2]) * SinOsc.ar(1000);
 		var rev = DelayL.kr(Amplitude.kr(FreeVerb.ar(revSignl, 1, 1, 0), 0.1, 0.3), 0.1, 0.1);
@@ -37,16 +37,16 @@ n.remove(\rev)
 
 (
 SynthDef(\lightver, { 
-	var in = DC.kr(0)!60;
+	var in = DC.kr(0)!48;
 /*	var trig = 1;*/
 	var src = Hsv2rgb.kr(\key.kr()*6, Rand(0.4, 1.0), 1) * 2 * EnvGen.kr(Env.perc(0.1, 3));
 	
-	var ins = MultiPanAz.kr(20, src, \pos.kr() * 2, 2, -0.5);
-	var outs = 0!60;
+	var ins = MultiPanAz.kr(16, src, \pos.kr() * 2, 2, -0.5);
+	var outs = 0!48;
 	
 	var revSignl = max(max(src[0], src[1]), src[2]) * SinOsc.ar(1000);
-	var rev = Amplitude.kr(FreeVerb.ar(revSignl, 1, 0.99), 0.1, 0.3).lag(0.1) * 0.3;
-	20.do({ |c|
+	var rev = Amplitude.kr(FreeVerb.ar(revSignl, 24, 0.99), 0.1, 0.3).lag(0.1) * 0.1;
+	16.do({ |c|
 /*		var revSignl = max(max(ins[c], ins[c+1]), ins[c+2]) * SinOsc.ar(1000);*/
 		var mod = LFNoise1.kr(13, 0.1, 0.9);
 		3.do({ |i|
@@ -58,7 +58,7 @@ SynthDef(\lightver, {
 	
 	DetectSilence.kr(outs.sum, doneAction: 2);
 	
-	Patcher.all.at(\waldstock).busesForMethod(\color).do({|bus, i|
+	Patcher.all.at(\waldstock).busesForGroupMethod(\ring, \color).do({|bus, i|
 		var offset = i * 3;
 		Out.kr(bus, [outs[offset], outs[offset+1], outs[offset+2]]);
 	});
@@ -74,16 +74,16 @@ SynthDef(\realver, {
 	var rev = FreeVerb.ar(snd, 1, 0.9, 0.2, 0.6);
 	out = LPF.ar(out + rev, 12000);
 	DetectSilence.ar(out.sum, doneAction: 2);
-	Out.ar(0, out);
+	Out.ar(0, out.sum);
 }).add;
 )
 Synth(\realver, [\pos, 1.0.rand, \key, 1.0.rand], Server.internal);
 
 (
-var dur = Pseq([Pseq([2], 3), 4, Pseq([1], 4), 4, 2, 3, 2]);
+var dur = Pseq([Pseq([2], 3), 4, Pseq([1], 4), 4, 2, 3, 2], 2);
 var key = Pwhite(0.0, 1.0);
 var pos = Pwhite(0.0, 1.0);
-t.record;
+/*t.record;*/
 /*var pos = Pseq([0, 0.5, 1, 1.5, 2]/2, inf);*/
 p.stop; q.stop;
 p = Pbind(

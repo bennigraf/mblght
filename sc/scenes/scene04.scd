@@ -15,17 +15,17 @@ n.stickToBottom();
 n.printChain
 
 
-n.add(\neg, NodeProxy.control(s, 60))
+n.add(\neg, NodeProxy.control(s, 48))
 (n[\neg][0] = {
-	var outs = 0!60;
+	var outs = 0!48;
 	var src = Hsv2rgb.kr(0.7, 1, 1);
 	var env = EnvGen.kr(Env.triangle(\myDur.kr(1)), \t_trig.tr).lincurve(0, 1, 0, 1, -2);
-	var dmpr = PanAz.kr(20, DC.kr(1), \pos.kr(0), \lvl.kr(0), \width.kr(3).lag(0.1), -0.5) * env;
+	var dmpr = PanAz.kr(16, DC.kr(1), \pos.kr(0), \lvl.kr(0), \width.kr(3).lag(0.1), -0.5) * env;
 	{ |i|
 		{ |j|
 			outs[i*3+j] = src[j] * (1-dmpr[i]);
 		}!3;
-	}!20;
+	}!16;
 	
 /*	outs = outs * (1 - dmpr);*/
 	
@@ -44,14 +44,14 @@ var pb = Pbind(
 	\t_trig, 1,
 	\myDur, Pfunc({|ev|ev.dur}),
 );
-t.record;
+/*t.record;*/
 n[\neg][1] = \set -> pb;
 Ndef(\full->\internal)[1] = \set -> pb;
 );
 t.stopRecording
 
 
-Ndef.ar(\full->\internal, 4);
+Ndef.ar(\full->\internal, 1);
 
 (Ndef(\full->\internal, {
 	var snd, out;
@@ -66,7 +66,7 @@ Ndef.ar(\full->\internal, 4);
 	20.do{ |n|
 		out = out + PanAz.ar(4, snd[n], 2/19 * n, 1, 0.5);
 	};
-	Compander.ar(out, out, -12.dbamp, 1, 1/4, 0.01, 0.1);
+	Compander.ar(out, out, -12.dbamp, 1, 1/4, 0.01, 0.1).sum;
 }));
 Ndef(\full->\internal).play
 

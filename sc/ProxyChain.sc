@@ -17,6 +17,20 @@ ProxyChain {
 		this.updateChain;
 	}
 	
+	addPlayer { |patcher, group, method, channels, chansPerMethod|
+		this.add(\player, NodeProxy(server));
+		this.stickToBottom(\player);
+		this.at(\player).source = {
+			var in = \in.kr(0!(channels*chansPerMethod));
+			Patcher.all.at(patcher).busesForGroupMethod(group, method).do({|bus, i|
+				var offset = i * chansPerMethod;
+				chansPerMethod.do({ |j|
+					Out.kr(bus.subBus(j), in[offset+j]);
+				});
+			});
+		};
+	}
+	
 	add { |name = nil, nodeproxy|
 		if(bottomprox.isNil, {
 			nodes.add(nodeproxy);

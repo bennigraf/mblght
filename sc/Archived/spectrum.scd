@@ -1,3 +1,5 @@
+n = ProxyChain().addPlayer(\waldstock, \ring, \color, 16, 3);
+
 (
 Routine.run({
 	d = DmxBuffer.new();
@@ -66,12 +68,12 @@ n.moveUp(\source)
 
 [1, 1, 1] ++ (0!20)
 
-
-n.add(\spectrum, NodeProxy.control(s, 60))
+n.remove(\spectrum)
+n.add(\spectrum, NodeProxy.control(s, 48))
 (n[\spectrum].source = {
-	var in = \in.kr(0!60);
+	var in = \in.kr(0!48);
 	var soundIn = Compander.ar(SoundIn.ar(0), SoundIn.ar(0), 0.3, 1, 1/4);
-	var bins = (0..19).collect({ |i|
+	var bins = (0..15).collect({ |i|
 		var freq = (80/25*i+55).midicps;
 		var snd = BPF.ar(soundIn, freq, 0.15);
 		freq.postln;
@@ -86,7 +88,7 @@ n.add(\spectrum, NodeProxy.control(s, 60))
 n.printChain
 n.moveUp(\spectrum)
 
-n.add(\rotor, NodeProxy.control(s, 60))
+n.add(\rotor, NodeProxy.control(s, 48))
 n.moveUp(\rotor)
 (n[\rotor].source = {
 	var in = \in.kr(0!60);

@@ -1,18 +1,8 @@
 Patcher.all.at(\waldstock).message((method: \color, data: [0, 1, 1]))
 
 
-n = ProxyChain();
-
-n.add(\player, NodeProxy(s));
-n.stickToBottom();
-(n[\player].source = {
-	var in = \in.kr(0!60);
-/*	[in[0], in[1], in[2]].poll;*/
-	Patcher.all.at(\waldstock).busesForMethod(\color).do({|bus, i|
-		var offset = i * 3;
-		Out.kr(bus, [in[offset], in[offset+1], in[offset+2]]);
-	});
-});
+n = ProxyChain().addPlayer(\waldstock, \ring, \color, 16, 3);
+n.clear(true)
 n.printChain
 
 n.clear(true)
@@ -26,7 +16,7 @@ n.add(\src, NodeProxy.control(s, 3))
 })
 
 
-n.add(\pan, NodeProxy.control(s, 60))
+n.add(\pan, NodeProxy.control(s, 48))
 n[\pan].source = nil
 (n[\pan][0] = {
 	var in = Hsv2rgb.kr(0.15, 0.58, 1);
@@ -38,7 +28,7 @@ n[\pan].source = nil
 	var a = \myFact.kr.linlin(1, 10, \myDur.kr/2, 0.1);
 	var r = \myFact.kr.linlin(1, 10, \myDur.kr/2, \myDur.kr) - 0.1 -d;
 	in = in * EnvGen.kr(Env.perc(a, r), TDelay.kr(\trig.tr, d)).lincurve(0, 1, 0, 1, 1);
-	MultiPanAz.kr(20, in, myPos, myWidth, ori);
+	MultiPanAz.kr(16, in, myPos, myWidth, ori);
 });
 
 (
@@ -63,21 +53,14 @@ o[1] = \set -> ~pb.deepCopy;
 )
 n[\pan][1] = nil; o[1] = nil;
 
-~apb = Pbind()
-~bpb = ~apb.copy
-~apb == ~bpb
 
-p = Pbind(\test, Pseq([Pseries(1, 1, 10), 10 - Pseries(1, 1, 10)], inf))
-p.next
-
-
-n.add(\mirror, NodeProxy.control(s, 60));
-n[\mirror][0] = { \in.kr(0!60) }
+n.add(\mirror, NodeProxy.control(s, 48));
+n[\mirror][0] = { \in.kr(0!48) }
 (n[\mirror][0] = {
-	var ins = \in.kr(0!60);
-	var outs = 0!60;
+	var ins = \in.kr(0!48);
+	var outs = 0!48;
 	{ |i|
-		var ofst = (19-i)*3;
+		var ofst = (15-i)*3;
 		var delmod = LFNoise1.kr(1, 0.1);
 		3.do({|j| 
 			var orign = ins[i*3+j];
@@ -86,25 +69,25 @@ n[\mirror][0] = { \in.kr(0!60) }
 			mirr = (WhiteNoise.kr(0.1, 0.4).lag(0.04) * mirr);
 			outs[i*3+j] = orign + mirr;
 		});
-	}!20;
+	}!16;
 	outs;
 })
 
 
 
-n.add(\rotor, NodeProxy.control(s, 60));
+n.add(\rotor, NodeProxy.control(s, 48));
 n[\rotor][0] = {
-	var in = \in.kr(0!60);
+	var in = \in.kr(0!48);
 	var pos = LFSaw.kr(\freq.kr(0), 1).range(0, 2);
-	Rotator.kr(20, 3, in, pos, 2, 0.1);
+	Rotator.kr(16, 3, in, pos, 2, 0.1);
 }
 n[\rotor].set(\freq, 1/23.7)
 n[\rotor].set(\freq, 0)
 
 
-n.add(\mixr, NodeProxy.control(s, 60));
+n.add(\mixr, NodeProxy.control(s, 48));
 n[\mixr].source = {
-	[\in.kr(0!60), \in2.kr(0!60), \in3.kr(0!60)].sum;
+	[\in.kr(0!48), \in2.kr(0!48), \in3.kr(0!48)].sum;
 }
 n.moveUp(\mixr)
 n.printChain
