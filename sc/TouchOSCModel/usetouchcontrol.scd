@@ -10,5 +10,5 @@ x.dump
 
 y.free
 y = {
-	Out.kr(x.bus, Amplitude.kr(SoundIn.ar(0), 0.01, 1));
+	Out.kr(x.bus, LagUD.kr(Amplitude.kr(SoundIn.ar(0)), 0.01, 3));
 }.play
