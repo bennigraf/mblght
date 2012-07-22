@@ -9,8 +9,14 @@ TouchControl {
 	var <>action; // an action function
 	var responder; // holds OSCFunc which takes values
 	var tracer; // routine that updates controller with values from bus
+	var traceNode; // a node that runs a sendreply on the server to get bus values
+	var traceResp; // a OSCFunc "osc proxy" that responds to sendreply on server and sends values on to TouchOSC
 	
 	classvar <>recvAddr, <>replAddr;
+	
+	*initclass {
+		
+	}
 	
 	*new { |type, name, oscaddr, makeBus|
 		^super.new.init(type, name, oscaddr, makeBus);
@@ -33,12 +39,13 @@ TouchControl {
 				bus = Bus.control(server, 1);
 				server.sync;
 				if(replAddr.class == NetAddr, {
-					tracer = this.makeTraceRoutine;
+/*					tracer = this.makeTraceRoutine;*/
+					this.makeTraceStuff;
 				});
 			});
 		});
 		
-		responder = this.makeOscResponder(oscaddr);
+		responder = this.makeOscResponder();
 	}
 	
 	bus {
@@ -61,13 +68,13 @@ TouchControl {
 		});
 	}
 	
-	makeOscResponder { |oscaddr|
+	makeOscResponder { 
 		var f = OSCFunc({ |msg|
 			if(hasBus, {
 				bus.setSynchronous(msg[1]);
 			});
 			val = msg[1];
-		}, oscaddr, recvAddr);
+		}, addr, recvAddr);
 		^f;
 	}
 	makeTraceRoutine {
@@ -84,5 +91,14 @@ TouchControl {
 				(1/25).wait;
 			});
 		});
+	}
+	makeTraceStuff {
+		traceNode = {
+			var trig = Impulse.kr(25);
+			SendReply.kr(trig, "/busvalue"++addr, In.kr(bus));
+		}.play;
+		traceResp = OSCFunc({ |msg|
+			replAddr.sendMsg(addr, msg[3]);
+		}, '/busvalue'++addr, recvAddr);
 	}
 }
