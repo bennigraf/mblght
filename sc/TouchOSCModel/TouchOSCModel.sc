@@ -2,7 +2,7 @@ TouchControl {
 	
 	var server; // holds server to run control bus on
 	var bus; // holds bus of this control
-	var hasBus; // bool this control has a bus
+	var <hasBus; // bool this control has a bus
 	var addr; // holds osc addr
 	var type; // fader, button, toggle, xy, multifader, multixy, label
 	

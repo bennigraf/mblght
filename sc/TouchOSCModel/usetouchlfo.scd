@@ -37,3 +37,34 @@ Routine.run({
 	s.sync;
 })
 })
+
+
+x = TouchLFO(1)
+y = TouchLFO(2)
+z = TouchLFO(3)
+a = TouchLFO(4)
+b = TouchLFO(5)
+c = TouchLFO(6)
+
+y.lfo.controlNames
+y.lfo.set(\wtBuf, 1)
+
+~a = Buffer.alloc(s, 20)
+x = NodeProxy.control(s, 1)
+x.source = { \wtBuf.kr(0).poll }
+x.source = { LFSaw.kr(1/3).poll; }
+x.source = { BufRd.kr(1, \wtBuf.kr(0).poll, LFSaw.kr(1/3, 0, 0.5, 0.5) * 20, 1, 2); }
+x.free
+x.controlNames
+~a.set(12, 1)
+~a.sendCollection(0!20)
+
+~b = Buffer.alloc(s, 20)
+~b.set(3, 1)
+~b.set(8, 1)
+~b.sendCollection(0.5!20)
+
+x.set(\wtBuf, 1)
+
+
+

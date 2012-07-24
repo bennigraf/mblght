@@ -5,6 +5,7 @@ TouchLFO {
 	var server;
 	classvar <types, <typeIndexes;
 	classvar <globalPhasor; // holds global phasor-thing? Maybe a NodeProxy that can be used with a .kr method?
+	classvar <globalBpm;
 	
 	var <myPhasor; // local phasor of this lfo (for offset & own duration)
 	var <lfo; // nodeproxy with lfo
@@ -76,16 +77,13 @@ TouchLFO {
 	
 	init { |myId, myType = nil|
 		id = myId;
-		if(myType == nil, {
-			type = \sine;
-		});
+		type = myType ?? \sine;
 		server = Server.default;
 		server.waitForBoot({
 			server.sync;
 			wavetableBuf = Buffer.alloc(server, 20, 1);
-			this.initControls;
 			server.sync;
-			this.setType(\sine);
+			this.initControls;
 			server.sync;
 			if(globalPhasor.isNil, {
 				this.initGlobalPhasor;
@@ -98,13 +96,53 @@ TouchLFO {
 			this.initLFO;
 			server.sync;
 			this.initLFOResponder;
+			this.setType(type);
+			server.sync;
 		});
 	}
 	
 	initGlobalPhasor {
-		globalPhasor = NodeProxy.control(server, 1).source_({
-			// 2 sec are 1 period/1second
-			Phasor.kr(\resetTrig.tr(0), 1/ControlRate.ir/2, 0, inf, 0);
+		Routine.run({
+			var bpmbutton, bpmlabel, globphase, bpmreset;
+			globalBpm = 120; // 120bpm...
+			globphase = TouchControl(\fader, '/globphase');
+			while({globphase.bus.isNil}, { 0.01.wait; });
+			globalPhasor = NodeProxy.control(server, 1).source_({
+				// 2 sec are 1 period/1second
+				var phase = Phasor.kr(\resetTrig.tr(0), 1/ControlRate.ir/2 * \tempo.kr(1), 0, inf, 0);
+				Out.kr(globphase.bus, phase.wrap(0, 1));
+				phase;
+			});
+			bpmbutton = TouchControl(\button, '/taptempo', false);
+			bpmlabel = TouchControl(\label, '/bpmlabel', false);
+			bpmreset = TouchControl(\button, '/bpmreset', false);
+			bpmreset.action_({ |val| if(val==1, {globalPhasor.set(\resetTrig, 1);}) });
+			bpmlabel.set("120");
+			
+			server.sync;
+			bpmbutton.action_({
+				var lasthits = [];
+				{ |val|
+					if(val == 1, {
+						var time = thisThread.seconds;
+						var hits = [];
+						hits = lasthits.select({|item| (time - item) < 8 });
+						if(hits.size == 4, {
+							var deltas = [];
+							var tempo; // sekunden pro hit
+							3.do({ |n| deltas = deltas.add(hits[n+1] - hits[n]); });
+							tempo = deltas.mean; // durchschnitt
+							globalBpm = 1 / tempo * 60;
+							bpmlabel.set((globalBpm.round(0.1)).asString);
+							globalPhasor.set(\tempo, globalBpm/120);
+						});
+						if(lasthits.size == 4, {
+							lasthits.removeAt(0);
+						});
+						lasthits = lasthits.add(time);
+					});
+				}
+			}.value());
 		});
 	}
 	initPhasor {
@@ -183,11 +221,13 @@ TouchLFO {
 		});
 		
 		// magic amp!
+		// doens't work yet, must implement algorightm in player...
 		controls.amp.action_({ |val|
 			var myWav;
 			if(type!=\waveform, {
 				this.setType(\waveform);
 			});
+			lfo.set(\magicAmp, val);
 			val = val * 4 + 1;
 			myWav = wavetable.as(Array) * 2 - 1;
 			myWav = myWav.abs**(1/val) * myWav.sign /2 + 0.5;
@@ -206,10 +246,9 @@ TouchLFO {
 		});
 		controls.typeLabel.set(this.typeAsUppercasedString);
 		Routine.run({
-			lfo.source = types[type][\shaper].value(myPhasor);
+			lfo[0] = types[type][\shaper].value(myPhasor);
 			if(type == \waveform, {
-				server.sync;
-				lfo.set(\wtBuf, wavetableBuf);
+				lfo.set(\wtBuf, wavetableBuf.bufnum);
 			});
 		});
 		if(type!=\waveform, {
@@ -219,8 +258,13 @@ TouchLFO {
 	
 	initLFO {
 		lfo = NodeProxy.control(server, 1);
-		lfo.source = types[type][\shaper].value(myPhasor);
-/*		lfo.set(\phasebus, myPhasor.bus);*/
+		lfo[0] = types[type][\shaper].value(myPhasor);
+		lfo[1] = \filter -> { |in|
+			var val = \magicAmp.kr(0) * 4 + 1;
+			in = in * 2 - 1;
+			in = in.abs**(1/val) * in.sign / 2 + 0.5;
+		};
+		lfo.set(\wtBuf, wavetableBuf.bufnum);
 	}
 		
 	initLFOResponder {
