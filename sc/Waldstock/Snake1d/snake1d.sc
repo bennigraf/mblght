@@ -71,7 +71,7 @@ Snake1d {
 		
 		SynthDef(\snakehead, { |pos = 0|
 			// pulsing türkis
-			var color = Hsv2rgb.kr(2/6, 1, 1) * SinOsc.kr(2, 0, 0.15, 0.85);
+			var color = Hsv2rgb.kr(2/6, 1, 1);
 			
 /*			Patcher.all[patcher].busesForGroupMethod(\ring, \color).do({ |bus, i|
 				Out.kr(bus, [sig[i*3], sig[i*3+1], sig[i*3+2]])
@@ -82,7 +82,7 @@ Snake1d {
 		}).add;
 
 		SynthDef(\snakepixel, { |pos = 0|
-			var color = Hsv2rgb.kr(3/6, 1, 0.5) * LFNoise0.kr(11.8, mul: 0.1, add: 1);			
+			var color = Hsv2rgb.kr(2.7/6, 1, 0.5) * LFNoise0.kr(11.8, mul: 0.1, add: 1);			
 			var buses = Patcher.all[patcher].busesForGroupMethod(\ring, \color);
 			Out.kr(Select.kr(pos, buses), color);
 		}).add;
@@ -95,8 +95,7 @@ Snake1d {
 		
 		SynthDef(\snakehit, { |pos = 0|
 			var time = 0.3;
-/*			var clr = Hsv2rgb.kr(Line.kr(0, 1, time), 1, 1) * Decay.kr(Impulse.kr(0), 1.3);*/
-			var clr = Hsv2rgb.kr(Line.kr(0, 1, time), 1, 1) * EnvGen.kr(Env.perc(time/2, time/2));
+			var clr = Hsv2rgb.kr(Line.kr(0, 0.1, time), 1, 1) * EnvGen.kr(Env.perc(time/2, time/2));
 			var timings = time - (((0..(channels-1))/channels)*time*2-time).abs;
 			var sig = { |n|
 				clr * DelayN.kr(clr, time, timings[n]);
