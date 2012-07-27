@@ -14,7 +14,7 @@ x.wavetableBuf.set(13, 1)
 x.wavetableBuf.sendCollection(Signal.sineFill(20, [1]).as(Array)/2+0.5)
 x.lfo.set(\wtBuf, 0)
 
-OSCFunc.trace(true)
+OSCFunc.trace(false)
 
 
 x = {

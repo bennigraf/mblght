@@ -68,7 +68,6 @@ TouchLFO {
 				},
 				wavetable: { Signal.fill(20, 0) }
 			));
-		types.postln;
 	}
 	
 	*new { |myId, myType = nil|
