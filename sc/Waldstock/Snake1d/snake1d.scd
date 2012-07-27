@@ -28,7 +28,8 @@ SynthDef(\snakehit, { |pos = 0|
 	var timings = time - (((0..(channels-1))/channels)-time).abs;
 
 	var sig = { |n|
-		clr * DelayN.kr(clr, 0.1 + timings[n], timings[n]);
+		clr * DelayN.kr(clr, time, timings[n]);
+/*		clr;*/
 	}!channels;
 	sig = sig.flatten;
 	
