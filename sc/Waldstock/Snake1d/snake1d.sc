@@ -93,11 +93,21 @@ Snake1d {
 			Out.kr(Select.kr(pos, buses), color);
 		}).add;
 		
-		(
 		SynthDef(\snakehit, { |pos = 0|
-			
+			var time = 0.3;
+/*			var clr = Hsv2rgb.kr(Line.kr(0, 1, time), 1, 1) * Decay.kr(Impulse.kr(0), 1.3);*/
+			var clr = Hsv2rgb.kr(Line.kr(0, 1, time), 1, 1) * EnvGen.kr(Env.perc(time/2, time/2));
+			var timings = time - (((0..(channels-1))/channels)*time*2-time).abs;
+			var sig = { |n|
+				clr * DelayN.kr(clr, time, timings[n]);
+			}!channels;
+			sig = sig.flatten;
+			sig = Rotator.kr(20, 3, sig, pos);
+			FreeSelf.kr(TDelay.kr(DC.kr(1), 1));
+			Patcher.all[patcher].busesForGroupMethod(\ring, \color).do({ |bus, i|
+				Out.kr(bus, [sig[i*3], sig[i*3+1], sig[i*3+2]])
+			});
 		}).add;
-		)
 	}
 	
 	initGame {
@@ -137,6 +147,7 @@ Snake1d {
 			
 			// if snake ate a fruit
 			if(asnake[\position] == afruit, {
+				Synth(\snakehit, [\pos, asnake[\position]/channels*2]);
 				asnake[\size] = asnake[\size] + 1;
 				this.newFruit;
 				eatenfruits = eatenfruits+1;
@@ -160,10 +171,12 @@ Snake1d {
 			asnake[\pixels].add(newpixl);
 		});
 		
+		fork {
 		asnake[\pixels].do({ |pos, i|
 			asnake[\synths][i].set(\pos, pos);
 			0.031.wait;
 		});
+		};
 	}
 	
 	snakeStep {
