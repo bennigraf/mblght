@@ -256,22 +256,36 @@ Patcher {
 	}
 	
 	busesForMethod { |method, deviceList|
-		var buses = [];
+		var buses = List();
 		if(deviceList.isNil, {
 			deviceList = devices;
 		});
 		deviceList.do({ |dev, i|
 			if(dev.device.hasMethod(method), {
-				buses = buses.add(dev.buses[method]);
-			}, {
-/*				buses = buses.add("false");*/
+				buses.add(dev.buses[method]);
 			});
 		});
 		^buses;
 	}
+	numBusesForMethod{ |method, deviceList|
+		var numbuses = 0;
+		if(deviceList.isNil, {
+			deviceList = devices;
+		});
+		deviceList.do({ |dev, i|
+			if(dev.device.hasMethod(method), {
+				numbuses = numbuses +1;
+			});
+		});
+		^numbuses;
+	}
 	busesForGroupMethod { |group, method|
 		var deviceList = groups[group];
 		^this.busesForMethod(method, deviceList);
+	}
+	numBusesForGroupMethod { |group, method|
+		var deviceList = groups[group];
+		^this.numBusesForMethod(method, deviceList);
 	}
 	
 	
