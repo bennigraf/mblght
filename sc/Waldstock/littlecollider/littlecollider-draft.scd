@@ -30,15 +30,15 @@ x = Synth(\particle);
 
 y.set(\speed, 0.65)
 
-x = Synth(\particle, [\offset, 0.25, \speed, 0]);
+b = Synth(\particle, [\offset, 0.25, \speed, 0]);
 y = Synth(\particle, [\offset, 0.75, \speed, 0]);
 z = Synth(\particle, [\offset, 1.25, \speed, 0]);
 a = Synth(\particle, [\offset, 1.75, \speed, 0]);
-x.set(\color, 0.25); y.set(\color, 0.5); z.set(\color, 0.75)
+b.set(\color, 0.25); y.set(\color, 0.5); z.set(\color, 0.75)
 
 ~base = 0.051
-[x, y, z, a].do({ |e, i|
-	e.set(\speed, ~base * (i/3 + 1))
+[b, y, z, a].do({ |e, i|
+	e.set(\speed, ~base * ((i+1)/3 + 1))
 /*	e.set(\speed, 0)*/
 })
 4.nthPrime
