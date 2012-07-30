@@ -98,18 +98,46 @@ x = Synth(\audiobg, [\speed, 1/4]);
 
 //////////////////// bass
 ~waldstockpath
-~buf = Buffer.read(s, ~waldstockpath+/+"littlecollider"+/+"909er.wav");
+~trigbus = Bus.control(s, 1)
 (
-SynthDef(\particledong, { 
+SynthDef(\particledong, { |trigbus = 0, amp = 1, extender = 1|
 	var kck, tck;
-	var snd = Saw.ar(36) * EnvGen.kr(Env.perc(0, 0.1));
+	var trig = In.kr(trigbus);
+	var snd = Saw.ar([36, 40.4]) * EnvGen.kr(Env.perc(0, 0.1), trig);
 	snd = RHPF.ar(snd, 73, 0.1);
 	kck = LPF.ar(snd, 280);
-	tck = BPF.ar(snd, 2000 + Rand(0, 1000), 0.1) * EnvGen.kr(Env.perc(0, 0.03, -12.dbamp));
+	tck = BPF.ar(snd, 2000 + {Rand(0, 1000)}!2, 0.1) * EnvGen.kr(Env.perc(0, 0.03, -12.dbamp), trig);
 	snd = kck + tck;
-	snd = FreeVerb.ar(snd, 1, 0.3, 0.2, -7.dbamp) + snd;
-	DetectSilence.ar(snd, doneAction: 2);
-	Out.ar(0, snd);
+	snd = snd + CombC.ar(snd, 0.1, 0.026 + LFNoise1.kr(1/2.83, 0.005), 1, -7.dbamp * extender);
+	snd = Compander.ar(snd, snd, 12.dbamp, 1, 1/3, 0.043, 0.83);
+	snd = FreeVerb.ar(snd, 1, 0.4, 0.2, -3.dbamp) + snd;
+	Out.ar(0, snd * amp);
 }).add;
 )
-Synth(\particledong);
+x = Synth(\particledong, [\trigbus, ~trigbus, \amp, -12.dbamp]);
+~trigbus.scope
+x.free
+y = {
+	Out.kr(~trigbus, Impulse.kr(1/3))
+}.play
+y.free
+
+y = x.setMsg(\amp, 0.2)
+y
+
+(
+SynthDef(\bsss, { |amp = 1, filter = 0.001, mylag = 4|
+	var beat = 128/60;
+	var tune = Duty.kr(8/beat, \reset.tr(0), Dseq([36, 30], inf));
+	var snd = Pulse.ar(tune.midicps.lag(0.1));
+	var fild = Duty.kr(Dseq(beat / [1, 2, 2], inf), \reset.tr(0), Dxrand([2, 2/3, 4, 3, 8, 6/8], inf));
+	snd = RLPF.ar(snd, 329 + SinOsc.kr(beat*fild, 0, 55) * filter.lag3(mylag), 0.43);
+	snd = HPF.ar(snd, 54);
+	Out.ar(0, snd!2 * amp);
+}).add;
+)
+y.free
+y = Synth(\bsss, [\amp, -20.dbamp]);
+y.set(\reset, 1)
+y.set(\mylag, 4)
+y.set(\filter, 1)
