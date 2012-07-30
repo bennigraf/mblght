@@ -77,10 +77,8 @@ Patcher {
 			buffers.pop.close;
 		});
 		all.removeAt(id);
-		if(default == this, {
-			if(all.size > 0, {
-				default = all[all.keys.asArray.at(0)];
-			});
+		if((default == this) && (all.size > 0), {
+			default = all[all.keys.asArray.at(0)];
 		});
 	}
 	

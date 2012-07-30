@@ -55,7 +55,7 @@ LGui_Main {
 	serverCheckView {
 		var view;
 		var string = "Server:";
-		var txt, btn, updateAction;
+		var txt, btn1, btn2, updateAction;
 /*		var text = StaticText(view, 200@20).string_();*/
 		
 		if(server.pid.isNil, {
@@ -66,9 +66,9 @@ LGui_Main {
 		
 		txt = StaticText(nil, 200@20).string_(string);
 		
-		btn = Button(nil, 80@20).states_([
+		btn1 = Button().states_([
 			["Boot Server", Color.black, Color.white],
-			["Stop Server", Color.black, Color.green] ])
+			["Stop Server", Color.black, Color.red] ])
 		.action_({ |view|
 			if(view.value == 1, {
 				server.boot;
@@ -78,21 +78,31 @@ LGui_Main {
 				this.updateView();
 			});
 		});
+		btn2 = Button().states_([["Reboot", Color.black, Color.white]])
+			.action_({
+				Patcher.all.do({|patcher|
+					patcher.buffers.do({|buf|
+						buf.close()
+					});
+					patcher.end();
+				});
+				thisProcess.recompile;
+			});
 		updateAction = {
 			var string;
 			if(server.pid.isNil, {
 				string = "Server: Not running!";
-				btn.value_(0);
+				btn1.value_(0);
 			}, {
 				string = "Server: Running...";
-				btn.value_(1);
+				btn1.value_(1);
 			});
 			txt.string_(string);
 		};
 		updateAction.value();
 		updateActions.add(updateAction);
 		
-		view = HLayout(txt, btn);
+		view = HLayout(txt, btn1, btn2);
 		
 		^view;
 	}

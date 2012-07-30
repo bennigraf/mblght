@@ -147,6 +147,7 @@ OlaPipe {
 	}
 	close {
 		pipe.close;
+		pipe = nil;
 	}
 	
 	send { | buffer |
