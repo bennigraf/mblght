@@ -31,16 +31,14 @@ SynthDef(\particle, {
 	var trig = Impulse.kr(8.3);
 	var decay = Decay.kr(trig, 0.3)!3;
 	var pos = TIRand.kr(0, channels-1, trig)/channels*2;
-	
+	var decayTrigs = PanAz.kr(20, trig!3, pos, level: 1, width: 1, orientation: 0);
 	var light = (Hsv2rgb.kr(5/6, 0.8, 0.5)!20).flatten * amp;
-	
-	var lightdecay = MultiPanAz.kr(channels, decay, pos, 1, ori: 0);
+/*	var lightdecay = MultiPanAz.kr(channels, decay, pos, 1, ori: 0);*/
+	var lightdecay = EnvGen.kr(Env.perc(0.1, 0.5), decayTrigs);
 	sig = light * (1+lightdecay);
-
 	Patcher.all[patcher].busesForGroupMethod(\ring, \color).do({ |bus, i|
 		Out.kr(bus, [sig[i*3], sig[i*3+1], sig[i*3+2]])
 	});
-
 }).add;
 )
 x.free
