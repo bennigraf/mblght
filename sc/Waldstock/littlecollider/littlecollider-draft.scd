@@ -53,3 +53,63 @@ OSCFunc.trace(false)
 OSCdef(\trig, { |msg|
 	(dur: 0.1, note: msg[2]-50).play;
 }, '/tr')
+
+
+
+t = TempoClock(128/60)
+t.beats
+t.bar
+r = Routine({
+	7.do({
+		"hit".postln;
+		1.wait;
+	});
+})
+r.reset
+t.play(r)
+t.sched(7, r)
+
+
+
+
+///////////////////// audio
+
+(SynthDef(\audiobg, { |amp = 1, speed = 0|
+	var trig = Impulse.kr(speed * 4);
+	var pos = Demand.kr(trig, 0, Dxrand((0..20), inf))/20*2;
+	var decayTrigs = PanAz.kr(4, trig, pos, level: 1, width: 1, orientation: 0);
+	var lightdecay = EnvGen.kr(Env.perc(0, 0.0161), decayTrigs);
+	var tunings = Demand.kr(trig, 0, 
+		Dseq([0, 3, 7, 6], inf)
+		 + Dwrand([0, 12], [0.9, 0.1], inf)
+		 + Dwrand([0, 3, 5], [0.8, 0.1, 0.1], inf);
+	);
+	var snd = SinOsc.ar((60 + tunings).midicps, mul: 12.dbamp).tanh.softclip;
+	snd = snd * lightdecay;
+	snd = snd + DelayC.ar(snd, 2, 1/(speed * 4) * (7/4), -9.3.dbamp);
+	snd = FreeVerb.ar(snd, 1, 0.53, 0.12) + (snd * LFNoise2.kr(1/6).range(-16, -6).dbamp);
+	Out.ar(0, snd * amp);
+}).add;)
+x.free
+x = Synth(\audiobg, [\speed, 128/60]);
+x = Synth(\audiobg, [\speed, 1/4]);
+
+
+
+//////////////////// bass
+~waldstockpath
+~buf = Buffer.read(s, ~waldstockpath+/+"littlecollider"+/+"909er.wav");
+(
+SynthDef(\particledong, { 
+	var kck, tck;
+	var snd = Saw.ar(36) * EnvGen.kr(Env.perc(0, 0.1));
+	snd = RHPF.ar(snd, 73, 0.1);
+	kck = LPF.ar(snd, 280);
+	tck = BPF.ar(snd, 2000 + Rand(0, 1000), 0.1) * EnvGen.kr(Env.perc(0, 0.03, -12.dbamp));
+	snd = kck + tck;
+	snd = FreeVerb.ar(snd, 1, 0.3, 0.2, -7.dbamp) + snd;
+	DetectSilence.ar(snd, doneAction: 2);
+	Out.ar(0, snd);
+}).add;
+)
+Synth(\particledong);
