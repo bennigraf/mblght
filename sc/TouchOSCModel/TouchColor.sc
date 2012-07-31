@@ -191,21 +191,22 @@ TouchColor {
 			var lfossum = Mix.kr(\lfos1.kr(0), \lfos2.kr(0), \lfos3.kr(0), \lfos4.kr(0), \lfos5.kr(0), \lfos6);
 			var lfovsum = Mix.kr(\lfov1.kr(0), \lfov2.kr(0), \lfov3.kr(0), \lfov4.kr(0), \lfov5.kr(0), \lfov6);*/
 			
-			var lforsum = Mix.kr(Lfosw.kr(lfor1, lfo1bus), Lfosw.kr(lfor2, lfo2bus), Lfosw.kr(lfor3, lfo3bus), 
-								 Lfosw.kr(lfor4, lfo4bus), Lfosw.kr(lfor5, lfo5bus), Lfosw.kr(lfor6, lfo6bus));
-			var lfogsum = Mix.kr(Lfosw.kr(lfog1, lfo1bus), Lfosw.kr(lfog2, lfo2bus), Lfosw.kr(lfog3, lfo3bus), 
-								 Lfosw.kr(lfog4, lfo4bus), Lfosw.kr(lfog5, lfo5bus), Lfosw.kr(lfog6, lfo6bus));
-			var lfobsum = Mix.kr(Lfosw.kr(lfob1, lfo1bus), Lfosw.kr(lfob2, lfo2bus), Lfosw.kr(lfob3, lfo3bus), 
-								 Lfosw.kr(lfob4, lfo4bus), Lfosw.kr(lfob5, lfo5bus), Lfosw.kr(lfob6, lfo6bus));
-			var lfohsum = Mix.kr(Lfosw.kr(lfoh1, lfo1bus), Lfosw.kr(lfoh2, lfo2bus), Lfosw.kr(lfoh3, lfo3bus), 
-								 Lfosw.kr(lfoh4, lfo4bus), Lfosw.kr(lfoh5, lfo5bus), Lfosw.kr(lfoh6, lfo6bus));
-			var lfossum = Mix.kr(Lfosw.kr(lfos1, lfo1bus), Lfosw.kr(lfos2, lfo2bus), Lfosw.kr(lfos3, lfo3bus), 
-								 Lfosw.kr(lfos4, lfo4bus), Lfosw.kr(lfos5, lfo5bus), Lfosw.kr(lfos6, lfo6bus));
-			var lfovsum = Mix.kr(Lfosw.kr(lfov1, lfo1bus), Lfosw.kr(lfov2, lfo2bus), Lfosw.kr(lfov3, lfo3bus), 
-								 Lfosw.kr(lfov4, lfo4bus), Lfosw.kr(lfov5, lfo5bus), Lfosw.kr(lfov6, lfo6bus));
+			var lforsum = Mix.kr([Lfosw.kr(lfor1, lfo1bus), Lfosw.kr(lfor2, lfo2bus), Lfosw.kr(lfor3, lfo3bus), 
+								 Lfosw.kr(lfor4, lfo4bus), Lfosw.kr(lfor5, lfo5bus), Lfosw.kr(lfor6, lfo6bus)]).clip(0, 1);
+			var lfogsum = Mix.kr([Lfosw.kr(lfog1, lfo1bus), Lfosw.kr(lfog2, lfo2bus), Lfosw.kr(lfog3, lfo3bus), 
+								 Lfosw.kr(lfog4, lfo4bus), Lfosw.kr(lfog5, lfo5bus), Lfosw.kr(lfog6, lfo6bus)]).clip(0, 1);
+			var lfobsum = Mix.kr([Lfosw.kr(lfob1, lfo1bus), Lfosw.kr(lfob2, lfo2bus), Lfosw.kr(lfob3, lfo3bus), 
+								 Lfosw.kr(lfob4, lfo4bus), Lfosw.kr(lfob5, lfo5bus), Lfosw.kr(lfob6, lfo6bus)]).clip(0, 1);
+			var lfohsum = Mix.kr([Lfosw.kr(lfoh1, lfo1bus), Lfosw.kr(lfoh2, lfo2bus), Lfosw.kr(lfoh3, lfo3bus), 
+								 Lfosw.kr(lfoh4, lfo4bus), Lfosw.kr(lfoh5, lfo5bus), Lfosw.kr(lfoh6, lfo6bus)]).clip(0, 1);
+			var lfossum = Mix.kr([Lfosw.kr(lfos1, lfo1bus), Lfosw.kr(lfos2, lfo2bus), Lfosw.kr(lfos3, lfo3bus), 
+								 Lfosw.kr(lfos4, lfo4bus), Lfosw.kr(lfos5, lfo5bus), Lfosw.kr(lfos6, lfo6bus)]).clip(0, 1);
+			var lfovsum = Mix.kr([Lfosw.kr(lfov1, lfo1bus), Lfosw.kr(lfov2, lfo2bus), Lfosw.kr(lfov3, lfo3bus), 
+								 Lfosw.kr(lfov4, lfo4bus), Lfosw.kr(lfov5, lfo5bus), Lfosw.kr(lfov6, lfo6bus)]).clip(0, 1);
 
 			[lfor1, lfor2, lfor3, lfor4, lfor5, lfor6].poll(1);
-			
+			[lforsum].poll(1);
+						
 			hsv = [Select.kr(lfoh, [hsv[0], lforsum]), Select.kr(lfos, [hsv[1], lfossum]), Select.kr(lfov, [hsv[2], lfovsum])];
 			rgb = [Select.kr(lfor, [rgb[0], lforsum]), Select.kr(lfob, [rgb[1], lfobsum]), Select.kr(lfob, [rgb[2], lfobsum])];
 			clr = Select.kr(mode, [Hsv2rgb.kr(hsv[0], hsv[1], hsv[2]), rgb]);
