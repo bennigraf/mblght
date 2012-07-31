@@ -9,7 +9,6 @@ TouchLFO {
 	
 	var <myPhasor; // local phasor of this lfo (for offset & own duration)
 	var <lfo; // nodeproxy with lfo
-	var <bus; // bus the lfo writes to
 	var type; // type of lfo...
 	var wavetable; // Signal (float array) with values from wavetable
 	var <wavetableBuf;
@@ -90,8 +89,6 @@ TouchLFO {
 			});
 			this.initPhasor;
 			server.sync;
-			bus = Bus.control(server, 1);
-			server.sync;
 			this.initLFO;
 			server.sync;
 			this.initLFOResponder;
@@ -101,48 +98,46 @@ TouchLFO {
 	}
 	
 	initGlobalPhasor {
-		Routine.run({
-			var bpmbutton, bpmlabel, globphase, bpmreset;
-			globalBpm = 120; // 120bpm...
-			globphase = TouchControl(\fader, '/globphase');
-			while({globphase.bus.isNil}, { 0.01.wait; });
-			globalPhasor = NodeProxy.control(server, 1).source_({
-				// 2 sec are 1 period/1second
-				var phase = Phasor.kr(\resetTrig.tr(0), 1/ControlRate.ir/2 * \tempo.kr(1), 0, inf, 0);
-				Out.kr(globphase.bus, phase.wrap(0, 1));
-				phase;
-			});
-			bpmbutton = TouchControl(\button, '/taptempo', false);
-			bpmlabel = TouchControl(\label, '/bpmlabel', false);
-			bpmreset = TouchControl(\button, '/bpmreset', false);
-			bpmreset.action_({ |val| if(val==1, {globalPhasor.set(\resetTrig, 1);}) });
-			bpmlabel.set("120");
-			
-			server.sync;
-			bpmbutton.action_({
-				var lasthits = [];
-				{ |val|
-					if(val == 1, {
-						var time = thisThread.seconds;
-						var hits = [];
-						hits = lasthits.select({|item| (time - item) < 8 });
-						if(hits.size == 4, {
-							var deltas = [];
-							var tempo; // sekunden pro hit
-							3.do({ |n| deltas = deltas.add(hits[n+1] - hits[n]); });
-							tempo = deltas.mean; // durchschnitt
-							globalBpm = 1 / tempo * 60;
-							bpmlabel.set((globalBpm.round(0.1)).asString);
-							globalPhasor.set(\tempo, globalBpm/120);
-						});
-						if(lasthits.size == 4, {
-							lasthits.removeAt(0);
-						});
-						lasthits = lasthits.add(time);
-					});
-				}
-			}.value());
+		var bpmbutton, bpmlabel, globphase, bpmreset;
+		globalBpm = 120; // 120bpm...
+		globphase = TouchControl(\fader, '/globphase');
+		while({globphase.bus.isNil}, { 0.01.wait; });
+		globalPhasor = NodeProxy.control(server, 1).source_({
+			// 2 sec are 1 period/1second
+			var phase = Phasor.kr(\resetTrig.tr(0), 1/ControlRate.ir/2 * \tempo.kr(1), 0, inf, 0);
+			Out.kr(globphase.bus, phase.wrap(0, 1));
+			phase;
 		});
+		bpmbutton = TouchControl(\button, '/taptempo', false);
+		bpmlabel = TouchControl(\label, '/bpmlabel', false);
+		bpmreset = TouchControl(\button, '/bpmreset', false);
+		bpmreset.action_({ |val| if(val==1, {globalPhasor.set(\resetTrig, 1);}) });
+		bpmlabel.set("120");
+		
+		server.sync;
+		bpmbutton.action_({
+			var lasthits = [];
+			{ |val|
+				if(val == 1, {
+					var time = thisThread.seconds;
+					var hits = [];
+					hits = lasthits.select({|item| (time - item) < 8 });
+					if(hits.size == 4, {
+						var deltas = [];
+						var tempo; // sekunden pro hit
+						3.do({ |n| deltas = deltas.add(hits[n+1] - hits[n]); });
+						tempo = deltas.mean; // durchschnitt
+						globalBpm = 1 / tempo * 60;
+						bpmlabel.set((globalBpm.round(0.1)).asString);
+						globalPhasor.set(\tempo, globalBpm/120);
+					});
+					if(lasthits.size == 4, {
+						lasthits.removeAt(0);
+					});
+					lasthits = lasthits.add(time);
+				});
+			}
+		}.value());
 	}
 	initPhasor {
 		myPhasor = NodeProxy.control(server, 1).source_({
@@ -285,5 +280,9 @@ TouchLFO {
 		var myType = type.asString;
 		myType[0] = myType[0].toUpper;
 		^myType;
+	}
+	
+	bus {
+		^lfo.bus;
 	}
 }

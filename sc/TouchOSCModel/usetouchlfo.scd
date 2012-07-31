@@ -1,4 +1,5 @@
 TouchControl.replAddr = NetAddr("padrick.local", 5001);
+TouchControl.replAddr = NetAddr("192.168.20.1", 5001);
 x = TouchLFO(1)
 x.myPhasor.bus.getSynchronous
 x.lfo.set(\phasebus, x.myPhasor.bus)
@@ -39,12 +40,12 @@ Routine.run({
 })
 
 
-x = TouchLFO(1)
-y = TouchLFO(2)
-z = TouchLFO(3)
-a = TouchLFO(4)
-b = TouchLFO(5)
-c = TouchLFO(6)
+x = TouchLFO(1);
+y = TouchLFO(2);
+z = TouchLFO(3);
+a = TouchLFO(4);
+b = TouchLFO(5);
+c = TouchLFO(6);
 
 y.lfo.controlNames
 y.lfo.set(\wtBuf, 1)

@@ -101,8 +101,8 @@ TouchControl {
 					if(hasBus, {
 						bus.setAt(n, msg[1]);
 					});
-					action.value(n, msg[1]);
 					val[n] = msg[1];
+					action.value(n, msg[1]);
 				}, addr++"/"++(n+1), recvAddr));
 			});
 		}, {
@@ -110,8 +110,8 @@ TouchControl {
 				if(hasBus, {
 					bus.setSynchronous(msg[1]);
 				});
-				action.value(msg[1]);
 				val = msg[1];
+				action.value(msg[1]);
 			}, addr, recvAddr);
 		});
 		^f;
@@ -127,4 +127,5 @@ TouchControl {
 			replAddr.sendMsg(addr, *myMessage); // The star unpacks the array somehow
 		}, '/busvalue'++addr, recvAddr);
 	}
+	
 }
