@@ -28,6 +28,8 @@ Patcher {
 	classvar <default; // default (usually first) Patcher...
 	classvar <all; // holds all opened patchers for reference...
 	
+	var aFun; // some vegas mode...
+	
 	*initClass {
 		all = ();
 	}
@@ -481,5 +483,31 @@ Patcher {
 		}, {
 			("Nothing found at index "+index).postln;
 		});
+	}
+	
+	
+	havefun {
+		if(aFun.notNil, { aFun.free });
+		aFun = {
+			var buses = this.busesForMethod(\color);
+			var point1 = LFNoise1.kr(8.3/120).range(0, 4).fold(0, 1).lag3(0.5);
+			var point2 = LFNoise2.kr(7.2/130).range(0, 4).fold(0, 1).lag3(0.5);
+			buses.do({ |bus, n|
+				var position = 1/buses.size * n;
+				var distance = (position - [point1, point2]).abs;
+				var sins = SinOsc.kr(0, distance[0] * 2pi, 0.5, 0.5)
+						+ SinOsc.kr(0, distance[1] * 2pi, 0.5, 0.5)
+						+ SinOsc.kr(0, distance.sum * pi)
+						+ SinOsc.kr(0, distance.sum / 2 * pi + LFTri.kr(1/18.83), 0.4)
+							/ 3.6;
+				var color = Hsv2rgb.kr(sins.fold(0, 1), 1, 1).lag3(2);
+				Out.kr(bus, color);
+			});
+			0;
+		}.play;
+	}
+	enoughfun {
+		aFun.free;
+		aFun = nil;
 	}
 }

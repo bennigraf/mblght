@@ -572,6 +572,7 @@ LGui_SetupPatcher {
 			ua.value();
 		});
 	}
+	
 }
 
 LGui_manageDevices {

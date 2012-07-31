@@ -19,3 +19,8 @@ TouchControl.replAddr = NetAddr("192.168.20.1", 5001);
 ~touchclrs.size
 
 add(TouchColor(6))
+
+LGui()
+
+Patcher.default.havefun
+Patcher.default.enoughfun
