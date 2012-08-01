@@ -49,3 +49,8 @@ Routine.run({
 	s.sync;
 });
 });
+
+
+
+x = TouchControl.new(\multitoggle, '/main/color1', false, 6)
+x.action_({|val| val.postln})

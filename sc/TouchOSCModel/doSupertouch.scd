@@ -24,3 +24,11 @@ LGui()
 
 Patcher.default.havefun
 Patcher.default.enoughfun
+
+
+/////////////////////supertouch
+/*
+1. create lfos
+2. create colors
+3. TouchLight with lfos and colors
+*/

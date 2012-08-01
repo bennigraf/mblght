@@ -224,6 +224,9 @@ TouchColor {
 		server.sync;
 	}
 	
+	bus {
+		^colorNode.bus;
+	}
 	
 	makeTraceResponders {
 		var clrs = ['h', 's', 'v', 'r', 'g', 'b'];
