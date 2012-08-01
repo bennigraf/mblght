@@ -5,6 +5,7 @@ TouchControl {
 	var <hasBus; // bool this control has a bus
 	var addr; // holds osc addr
 	var type; // fader, button, toggle, xy, multifader, multixy, label
+	var thistype; // holds properties of this type of control
 	
 	var <val; // holds actual value of control
 	var <>action; // an action function
@@ -23,7 +24,9 @@ TouchControl {
 			multifader: (), // set busChannels in arguments...
 			label: (busChannels: 1), // well, ignore this, bad coding here...
 			button: (busChannels: 1),
-			toggle: (busChannels: 1)
+			toggle: (busChannels: 1),
+			multitoggle: (), // see multifader
+			xy: (busChannels: 2)
 		);
 	}
 	
@@ -43,12 +46,12 @@ TouchControl {
 		hasBus = false;
 		
 		// set some initial arguments externally if needed, i.e. num of faders for multifader
-		this.initType(arguments); 
+		thistype = this.initType(arguments); 
 		
 		if(makeBus, {
 			hasBus = true;
 			server.waitForBoot({
-				bus = Bus.control(server, types[type][\busChannels]);
+				bus = Bus.control(server, thistype[\busChannels]);
 				server.sync;
 				if(replAddr.class == NetAddr, {
 /*					tracer = this.makeTraceRoutine;*/
@@ -61,9 +64,14 @@ TouchControl {
 	}
 	
 	initType { |arguments|
+		var atype = types[type];
 		if(type == \multifader, {
-			types[\multifader][\busChannels] = arguments;
+			atype[\busChannels] = arguments;
 		});
+		if(type == \multitoggle, {
+			atype[\busChannels] = arguments;
+		});
+		^atype;
 	}
 	
 	bus {
@@ -94,9 +102,9 @@ TouchControl {
 	
 	makeOscResponder { 
 		var f;
-		if(types[type][\busChannels]>1, {
+		if(thistype[\busChannels]>1, {
 			f = [];
-			types[type][\busChannels].do({ |n|
+			thistype[\busChannels].do({ |n|
 				f = f.add(OSCFunc({ |msg|
 					if(hasBus, {
 						bus.setAt(n, msg[1]);
@@ -120,7 +128,7 @@ TouchControl {
 	makeTraceStuff {
 		traceNode = {
 			var trig = Impulse.kr(25);
-			SendReply.kr(trig, "/busvalue"++addr, In.kr(bus, types[type][\busChannels]));
+			SendReply.kr(trig, "/busvalue"++addr, In.kr(bus, thistype[\busChannels]));
 		}.play;
 		traceResp = OSCFunc({ |msg|
 			var myMessage = msg[3..]; // this magic is .copyRange!
