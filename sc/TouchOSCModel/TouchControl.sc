@@ -26,6 +26,7 @@ TouchControl {
 			button: (busChannels: 1),
 			toggle: (busChannels: 1),
 			multitoggle: (), // see multifader
+			led: (busChannels: 1),
 			xy: (busChannels: 2)
 		);
 	}

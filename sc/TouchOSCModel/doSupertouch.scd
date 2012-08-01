@@ -34,6 +34,8 @@ Patcher.default.enoughfun
 */
 LGui();
 (Routine.run({
+	defer{LGui()};
+	0.5.wait;
 	TouchControl.replAddr = NetAddr("192.168.20.1", 5001);
 
 	~touchctls = List();
@@ -57,3 +59,12 @@ LGui();
 	TouchLight.patcher_(\waldstock);
 	x = TouchLight()
 }))
+x.mainlights[0][\synth].bus.get
+x.mainlights[0][\synth].bus.getSynchronous
+x.mainlights[0][\paramsynths][0].bus.getSynchronous
+x.mainlights[0][\synth].set(\param1, 0.5)
+x.mainlights[0][\synth].map(\param1, x.mainlights[0][\paramsynths][0])
+
+x.mainlights[0][\paramsynths][0].set(\lfobus2, ~touchctls[0].bus.index)
+~touchctls[0].bus.index
+
