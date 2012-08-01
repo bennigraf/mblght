@@ -4,11 +4,11 @@
 TouchLight {
 	
 	classvar thisaddr, remoteaddr; // some NetAddrs...
-	classvar patcher; // the patcher to talk to!
+	classvar <>patcher; // the patcher to talk to!
 	
 	classvar lights; // holds a couple of default lighting synths
-	classvar lfos;
-	classvar colors;
+	classvar >lfos;
+	classvar >colors;
 	
 	var server;
 	var controls;
@@ -19,47 +19,67 @@ TouchLight {
 	var strobo, fog;
 	
 	*initClass {
-		lights = (main: this.mainLights, back: this.backLights());
+		lights = (main: this.mainLightSynths, back: this.backLightSynths());
 		lfos = List();
 		colors = List();
 	}
-	*mainLights {
+	*mainLightSynths {
 		// each synth should use: arg amp = 0, switch = 0; \param1.kr(0), \param2.kr(0), \color1.kr(0), \color2.kr(0)
 		// main also has: \position.kr([x, y, width, lock]); // let's see if this array stuff works here...
 		var l = List();
 		l.add({
-			// some synthie stuff
+			// for now just polling some stuff...
+			arg amp = 0, switch = 0;
+			amp.poll(2, "amp");
+			switch.poll(2, "switch");
+			\param1.kr(0).poll(2, "param1");
+			\param2.kr(0).poll(2, "param2");
+			\color1.kr(0).poll(2, "color1");
+			\color2.kr(0).poll(2, "color2");
+/*			\position.kr([0, 0, 0, 0]).poll(2);*/
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
+		^l;
 	}
-	*backLights {
+	*backLightSynths {
 		var l = List();
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
 		l.add({
-			// some synthie stuff
+			arg amp = 0, switch = 0;
+			0;
 		});
+		^l;
 	}
 	
 	*new { 
@@ -67,14 +87,14 @@ TouchLight {
 	}
 	
 	init {
-		if(thisaddr.isNil, {
+/*		if(thisaddr.isNil, {
 			"Set a local address first".error;
 			^false;
-		});
-		if(thisaddr.isNil, {
+		});*/
+/*		if(remoteaddr.isNil, {
 			"Set a remote address first".error;
 			^false;
-		});
+		});*/
 		if(lfos.size<6, {
 			"Pleeeeeaase add some lfos first!".error;
 			^false;
@@ -92,11 +112,15 @@ TouchLight {
 		
 		mainlights = List();
 		backlights = List();
+		activeMainChan = 0;
+		activeBackChan = 0;
 		strobo = ();
 		fog = ();
 		
 		Routine.run({
+			"hip".postln;
 			this.initLights();
+			"hap".postln;
 			this.initControls();
 			
 		});
@@ -201,9 +225,9 @@ TouchLight {
 		controls[\strobo] = ();
 		controls[\strobo][\button] = TouchControl(\button, '/strobo', false)
 			.action_({|val| strobo[\synth].set(\toggl, val); });
-		controls[\strobo][\rate] = TouchControl(\toggle, '/strobo')
+		controls[\strobo][\stroberate] = TouchControl(\toggle, '/strobo')
 			.action_({|val|
-				strobo[\synth].set(\rate, val * 0.9 + 0.1)
+				strobo[\synth].set(\stroberate, val * 0.9 + 0.1)
 			});
 		// fog
 		controls[\fog] = ();
@@ -222,12 +246,16 @@ TouchLight {
 		// inputs available (on/off, amp, 2x param+lfo+am, color1, color2, for main: pos+lock+width)
 		
 		5.do({ |n|
+			"hep".postln;
 			mainlights.add(this.initLight(\main, n));
 		});
+		
 		5.do({ |n|
 			backlights.add(this.initLight(\back, n));
 		});
 		strobo = this.initLight(\strobo);
+		server.sync;
+		"neuffen".postln;
 		fog = this.initLight(\fog);
 		server.sync;
 	}
@@ -261,6 +289,7 @@ TouchLight {
 			server.sync;
 			
 			// actual light synths
+			("wanna make the synth"+type+n).postln;
 			light[\synth] = this.theSynth(type, n);
 			light[\synth].map(\param1, light[\paramsynths][0]);
 			light[\synth].map(\param2, light[\paramsynths][1]);
@@ -286,13 +315,16 @@ TouchLight {
 	// make the actual light playing synth
 	theSynth { |type, n|
 		var syn, source;
+		("making the synth"+type+n).postln;
 		if(type == \main, {
-			source = TouchLight.mainLights[n];
+			source = TouchLight.mainLightSynths.at(n);
 		});
 		if(type == \back, {
-			source = TouchLight.backLights[n];
+			source = TouchLight.backLightSynths.at(n);
 		});
+		"hoppel".postln;
 		syn = NodeProxy.control(server).source_(source);
+		"poppel".postln;
 		^syn;
 	}
 	
@@ -311,14 +343,17 @@ TouchLight {
 		^synth;
 	}
 	aColorSynth {
-		var synth = NodeProxy.control(server, 3).source_({
+		var synth;
+		synth = NodeProxy.control(server, 3).source_({
 			arg clrbus1 = 0, clrbus2 = 0, clrbus3 = 0, clrbus4 = 0, clrbus5 = 0, clrbus6 = 0;
 			var clrs = [\clr1.kr(0), \clr2.kr(0), \clr3.kr(0), \clr5.kr(0), \clr6.kr(0)];
 			var clrbs = [In.kr(clrbus1, 3), In.kr(clrbus2, 3), In.kr(clrbus3, 3),
 						In.kr(clrbus4, 3), In.kr(clrbus5, 3), In.kr(clrbus6, 3)];
 			var clrsum = Mix.kr({ |n|
 				Select.kr(clrs[n], [0!3, clrbs[n]]);
-			}!6).clip(0, 1);
+			}!5).clip(0, 1);
+			// TODO: only 5 clrs here???
+			clrsum;
 		});
 		^synth;
 	}
@@ -333,21 +368,23 @@ TouchLight {
 	
 	strobeSynth {
 		var synth = NodeProxy.control(server).source_({
-			var buses = Patcher.all.at(patcher).busesForGroupMethod(\strobo, \blitz);
+			var buses = Patcher.all.at(TouchLight.patcher).busesForGroupMethod(\strobo, \blitz);
 			buses.do({
-				Out.kr(buses, [\toggl.kr(0)/* * \intens.kr(0)*/, \rate.kr(0.1)]);
+				Out.kr(buses, [\toggl.kr(0)/* * \intens.kr(0)*/, \stroberate.kr(0.1)]);
 			});
+			DC.kr(0);
 		});
 		^synth;
 	}
 	fogSynth {
 		var synth = NodeProxy.control(server).source_({
-			var buses = Patcher.all.at(patcher).busesForGroupMethod(\fog, \fog);
+			var buses = Patcher.all.at(TouchLight.patcher).busesForGroupMethod(\fog, \fog);
 			var ph = Phasor.kr(\auto.kr(0), 1, -1, 60*ControlRate.ir);
 			var fogsig = \toggl.kr(0) + (Trig1.kr(ph, 60 * \autointens.kr(0) * 0.8 + 0.2) * \auto.kr(0)).lag3(5);
 			buses.do({
 				Out.kr(buses, fogsig);
 			});
+			0;
 		});
 		^synth;
 	}

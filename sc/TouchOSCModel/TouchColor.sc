@@ -35,6 +35,7 @@ TouchColor {
 			this.makeColorNode();
 			this.makeTraceResponders();
 			server.sync; // server sync must happen inside subroutines?!
+			0.5.wait;
 			colorNode.set(\mode, 0); // hsv
 			colorNode.set(\hbus, controls.h.bus.index);
 			colorNode.set(\sbus, controls.s.bus.index);
@@ -44,9 +45,6 @@ TouchColor {
 			colorNode.set(\bbus, controls.b.bus.index);
 			lfos.do({ |lfo, n|
 				var bus = 'lfo'++(n+1)++'bus';
-				lfo.postln;
-				lfo.bus.postln;
-				lfo.bus.index.postln;
 				colorNode.set(bus, lfo.bus.index);
 			});
 		});
@@ -89,7 +87,7 @@ TouchColor {
 		controls.hlfo = List();
 		lfos.size.do({ |n|
 			var acontrol = TouchControl(\toggle, '/color'++id++'/h/lfo'++(n+1), false)
-				.action_({|val| this.maplfo(n+1, 'h', val); ("h - lfo"+n).postln });
+				.action_({|val| this.maplfo(n+1, 'h', val); });
 			controls.hlfo.add(acontrol);
 		});
 		controls.slfo = List();
@@ -109,8 +107,6 @@ TouchColor {
 	}
 	
 	maplfo { |n, clr, val|
-		"mapping".postln;
-		[n ,clr, val].postln;
 		if(val == 1, {
 			if(lfos[n-1].bus.class == Bus, {
 /*				colorNode.map(\lfo++clr++n, lfos[n-1].bus);*/
@@ -204,8 +200,8 @@ TouchColor {
 			var lfovsum = Mix.kr([Lfosw.kr(lfov1, lfo1bus), Lfosw.kr(lfov2, lfo2bus), Lfosw.kr(lfov3, lfo3bus), 
 								 Lfosw.kr(lfov4, lfo4bus), Lfosw.kr(lfov5, lfo5bus), Lfosw.kr(lfov6, lfo6bus)]).clip(0, 1);
 
-			[lfor1, lfor2, lfor3, lfor4, lfor5, lfor6].poll(1);
-			[lforsum].poll(1);
+/*			[lfor1, lfor2, lfor3, lfor4, lfor5, lfor6].poll(1);*/
+/*			[lforsum].poll(1);*/
 						
 			hsv = [Select.kr(lfoh, [hsv[0], lforsum]), Select.kr(lfos, [hsv[1], lfossum]), Select.kr(lfov, [hsv[2], lfovsum])];
 			rgb = [Select.kr(lfor, [rgb[0], lforsum]), Select.kr(lfob, [rgb[1], lfobsum]), Select.kr(lfob, [rgb[2], lfobsum])];
