@@ -27,12 +27,12 @@ TouchControl {
 			toggle: (busChannels: 1),
 			multitoggle: (), // see multifader
 			led: (busChannels: 1),
-			xy: (busChannels: 2)
+			xy: (busChannels: 1)
 		);
 	}
 	
-	*new { |type, name, oscaddr, makeBus, arguments|
-		^super.new.init(type, name, oscaddr, makeBus, arguments);
+	*new { |type, oscaddr, makeBus, arguments|
+		^super.new.init(type, oscaddr, makeBus, arguments);
 	}
 	
 	init { |myType, oscaddr, makeBus, arguments|
@@ -43,7 +43,7 @@ TouchControl {
 		
 		bus = nil;
 		val = nil;
-		action = { };
+		action = { |val| };
 		hasBus = false;
 		
 		// set some initial arguments externally if needed, i.e. num of faders for multifader
@@ -71,6 +71,9 @@ TouchControl {
 		});
 		if(type == \multitoggle, {
 			atype[\busChannels] = arguments;
+		});
+		if(type == \button, {
+			val = 0;
 		});
 		^atype;
 	}
@@ -116,11 +119,17 @@ TouchControl {
 			});
 		}, {
 			f = OSCFunc({ |msg|
+				var actval;
 				if(hasBus, {
 					bus.setSynchronous(msg[1]);
 				});
 				val = msg[1];
-				action.value(msg[1]);
+				if(msg.size > 2, {
+					actval = msg[1..];
+				}, {
+					actval = msg[1];
+				});
+				action.value(actval);
 			}, addr, recvAddr);
 		});
 		^f;

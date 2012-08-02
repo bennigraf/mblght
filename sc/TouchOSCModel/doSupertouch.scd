@@ -25,6 +25,7 @@ LGui()
 Patcher.default.havefun
 Patcher.default.enoughfun
 
+OSCFunc.trace(true)
 
 /////////////////////supertouch
 /*
@@ -61,10 +62,31 @@ LGui();
 }))
 x.mainlights[0][\synth].bus.get
 x.mainlights[0][\synth].bus.getSynchronous
+x.mainlights[0][\synth].get(\param1).bus.get
+x.mainlights[0][\paramsynths][0].get(\lfo6)
+x.mainlights[0][\paramsynths][0].set(\lfo1, 1)
 x.mainlights[0][\paramsynths][0].bus.getSynchronous
-x.mainlights[0][\synth].set(\param1, 0.5)
+x.mainlights[0][\synth].set(\color1, 0.5)
 x.mainlights[0][\synth].map(\param1, x.mainlights[0][\paramsynths][0])
 
 x.mainlights[0][\paramsynths][0].set(\lfobus2, ~touchctls[0].bus.index)
 ~touchctls[0].bus.index
 
+
+
+x = TouchControl(\xy, '/main/pos', false)
+x.action_({|val| val.postln;})
+x.set([0.3, 0.8], true)
+x.val
+
+
+x = TouchControl(\button, '/main/selectchan', false)
+z = List()
+3.do({ |i|
+	z.add(TouchControl(\led, '/main/chan'++(i+1)++'sel', false))
+});
+y.set(1)
+z[2].set(1)
+
+e = ()
+e[\test][\some] = 1

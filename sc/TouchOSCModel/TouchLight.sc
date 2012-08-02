@@ -16,6 +16,7 @@ TouchLight {
 	var <backlights; // list with light objects in it
 	var activeMainChan;
 	var activeBackChan;
+	var state; // holds state of preset - params, lfos, colors
 	var strobo, fog;
 	
 	*initClass {
@@ -32,12 +33,12 @@ TouchLight {
 			arg amp = 0, switch = 0;
 /*			amp.poll(2, "amp");*/
 /*			switch.poll(2, "switch");*/
-/*			\param1.kr(0).poll(2, "param1");*/
-/*			\param2.kr(0).poll(2, "param2");*/
-/*			\color1.kr(0).poll(2, "color1");*/
-/*			\color2.kr(0).poll(2, "color2");*/
+			\param1.kr(0).poll(2, "param1");
+			\param2.kr(0).poll(2, "param2");
+/*			\color1.kr([0, 0, 0]).poll(2);*/
+/*			\color2.kr([0, 0, 0]).poll(2);*/
 /*			\position.kr([0, 0, 0, 0]).poll(2);*/
-			1 * \param1.kr(0);
+			1 * amp * switch;
 		});
 		l.add({
 			arg amp = 0, switch = 0;
@@ -110,6 +111,8 @@ TouchLight {
 		
 		server = Server.default;
 		
+		state = this.emptyState;
+		
 		mainlights = List();
 		backlights = List();
 		activeMainChan = 0;
@@ -127,25 +130,60 @@ TouchLight {
 		
 	}
 	
+	emptyState {
+		var e = ();
+		e[\main] = 5.collect({|n|
+			var el = ();
+			el[\param1] = (val: 0, lfo: (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0), lfoam: 0);
+			el[\param2] = (val: 0, lfo: (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0), lfoam: 0);
+			el[\color1] = (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0);
+			el[\color2] = (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0);
+			el;
+		});
+		e[\back] = 5.collect({|n|
+			var el = ();
+			el[\param1] = (val: 0, lfo: (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0), lfoam: 0);
+			el[\param2] = (val: 0, lfo: (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0), lfoam: 0);
+			el[\color1] = (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0);
+			el[\color2] = (0: 0, 1: 0, 2:0, 3:0, 4:0, 5:0);
+			el;
+		});
+	}
+	
 	// creates Controls
 	initControls {
 		controls = ();
 		// global/shared controls
 		// main chan selector
-		controls[\mainchan] = TouchControl(\fader, '/main/selectchan', false)
-			.action_({|val| 
-				activeMainChan = val;
-				controls[\mainchanselected].do({|c| c.set(0)});
-				controls[\mainchanselected][val-1].set(1);
-			});
 		controls[\mainchanselected] = List();
 		5.do({ |n|
-			controls[\mainchanselected].add(TouchControl(\led, '/main/chan'++(n+1)++'sel', false));
+			var ctrl = TouchControl(\led, '/main/chan'++(n+1)++'sel', false);
+			controls[\mainchanselected].add(ctrl);
 		});
+		controls[\mainchan] = TouchControl(\toggle, '/main/selectchan', false)
+			.action_({|val| 
+				if(val != 0, {
+					activeMainChan = val;
+					this.loadChan(\main, val);
+					controls[\mainchanselected].do({|c, n| 
+						if(n != (val-1), { c.set(0) }, {c.set(1) }); });
+				});
+			});
 		
 		// back chan selector
-		controls[\backchan] = TouchControl(\fader, '/back/selectchan', false)
-			.action_({|val| activeBackChan = val });
+		controls[\backchanselected] = List();
+		5.do({ |n|
+			var ctrl = TouchControl(\led, '/back/chan'++(n+1)++'sel', false);
+			controls[\backchanselected].add(ctrl);
+		});
+		controls[\backchan] = TouchControl(\toggle, '/back/selectchan', false)
+			.action_({|val| 
+				if(val != 0, {
+					activeBackChan = val;
+					controls[\backchanselected].do({|c, n| 
+						if(n != (val-1), { c.set(0) }, {c.set(1) }); });
+				});
+			});
 		
 		// main chan faders
 		controls[\main] = List();
@@ -168,12 +206,14 @@ TouchLight {
 			var aStrip = ();
 			aStrip[\fader] = TouchControl(\fader, '/back/chan'++(n+1)++'fader');
 			aStrip[\toggle] = TouchControl(\toggle, '/back/chan'++(n+1)++'toggle');
-			controls[\main].add(aStrip);
+			controls[\back].add(aStrip);
 		});
 		
 		// lfos and colors for main
 		controls[\mainparams] = List();
 		controls[\maincolors] = List();
+		controls[\backparams] = List();
+		controls[\backcolors] = List();
 		['main', 'back'].do({ |where|
 			var activeChan, lights;
 			if(where == 'main', {
@@ -187,18 +227,21 @@ TouchLight {
 			2.do({ |n|
 				var aParam = ();
 				var path;
-				aParam[\fader] = TouchControl(\fader, '/main/param'++(n+1), false)
+				aParam[\fader] = TouchControl(\fader, '/'++where++'/param'++(n+1), false)
 					.action_({|val|
 						lights[activeChan][\paramsynths][n].set(\param, val);
+						states[where][activeChan][\param++n][\val] = val;
 					});
-				aParam[\lfoam] = TouchControl(\fader, '/main/lfoam'++(n+1), false)
+				aParam[\lfoam] = TouchControl(\fader, '/'++where++'/lfoam'++(n+1), false)
 					.action_({|val|
 						lights[activeChan][\paramsynths][n].set(\lfoam, val);
+						states[where][activeChan][\param++n][\lfoam] = val;
 					});
 				6.do({ |o|
-					aParam[(\lfo++(n+1)).asSymbol] = TouchControl(\toggle, '/main/param'++(n+1)++'lfo'++(o+1), false)
+					aParam[(\lfo++(n+1)).asSymbol] = TouchControl(\toggle, '/'++where++'/param'++(n+1)++'lfo'++(o+1), false)
 						.action_({ |val|
 							lights[activeChan][\paramsynths][n].set(\lfo++(o+1), val);
+							states[where][activeChan][\param++n][\lfo][o] = val;
 						});
 				});
 				controls[where++'params'].add(aParam);
@@ -207,9 +250,10 @@ TouchLight {
 			2.do({ |n|
 				var aClr = List();
 				6.do({ |o|
-					aClr.add(TouchControl(\toggle, '/main/color'++(n+1)++(o+1), false)
+					aClr.add(TouchControl(\toggle, '/'++where++'/color'++(n+1)++(o+1), false)
 						.action_({ |val|
 							lights[activeChan][\colorsynths][n].set(\clr++(o+1), val);
+							states[where][activeChan][\color++n][o] = val;
 						}) );
 				});
 				controls[where++'colors'].add(aClr);
@@ -219,15 +263,16 @@ TouchLight {
 		// position for main
 		controls[\position] = TouchControl(\xy, '/main/pos', false)
 			.action_({ |val|
-				mainlights[\positionsynth].set(\posx, val[0], \posy, val[1]);
+				mainlights[activeMainChan][\positionsynth].set(\posx, val[0]);
+				mainlights[activeMainChan][\positionsynth].set(\posy, val[1]);
 			});
 		controls[\positionwidth] = TouchControl(\fader, '/main/poswidth', false)
 			.action_({ |val|
-				mainlights[\positionsynth].set(\poswidth, val);
+				mainlights[activeMainChan][\positionsynth].set(\poswidth, val);
 			});
 		controls[\positionlock] = TouchControl(\fader, '/main/poslock', false)
 			.action_({ |val|
-				mainlights[\positionsynth].set(\poslock, val);
+				mainlights[activeMainChan][\positionsynth].set(\poslock, val);
 			});
 		
 		// strobo
@@ -246,7 +291,10 @@ TouchLight {
 			.action_({|val|	fog[\synth].set(\auto, val) });		
 		controls[\fog][\button] = TouchControl(\button, '/autofog/intens', false)
 			.action_({|val|	fog[\synth].set(\autointens, 1) });
-		
+	}
+	
+	loadChan { |where, val|
+/*		controls[where][]*/
 	}
 	
 	// creates actual lighting sdefs
@@ -294,6 +342,7 @@ TouchLight {
 			light[\colorsynths] = List();
 			2.do({
 				var syn = this.aColorSynth;
+				server.sync;
 				syn.set(\clrbus1, colors[0].bus.index, \clrbus2, colors[1].bus.index, \clrbus3, colors[2].bus.index,
 						\clrbus4, colors[3].bus.index, \clrbus5, colors[4].bus.index, \clrbus6, colors[5].bus.index);
 				light[\colorsynths].add(syn);
@@ -361,24 +410,26 @@ TouchLight {
 	aColorSynth {
 		var synth;
 		synth = NodeProxy.control(server, 3).source_({
-			arg clrbus1 = 0, clrbus2 = 0, clrbus3 = 0, clrbus4 = 0, clrbus5 = 0, clrbus6 = 0;
-			var clrs = [\clr1.kr(0), \clr2.kr(0), \clr3.kr(0), \clr5.kr(0), \clr6.kr(0)];
-			var clrbs = [In.kr(clrbus1, 3), In.kr(clrbus2, 3), In.kr(clrbus3, 3),
-						In.kr(clrbus4, 3), In.kr(clrbus5, 3), In.kr(clrbus6, 3)];
+			var clrs = [\clr1.kr(0), \clr2.kr(0), \clr3.kr(0), \clr4.kr(0), \clr5.kr(0), \clr6.kr(0)];
+			var clrbs = [In.kr(\clrbus1.kr(0), 3), In.kr(\clrbus2.kr(0), 3), In.kr(\clrbus3.kr(0), 3),
+						In.kr(\clrbus4.kr(0), 3), In.kr(\clrbus5.kr(0), 3), In.kr(\clrbus6.kr(0), 3)];
 			var clrsum = Mix.kr({ |n|
 				Select.kr(clrs[n], [0!3, clrbs[n]]);
-			}!5).clip(0, 1);
+			}!6).clip(0, 1);
 			// TODO: only 5 clrs here???
 			clrsum;
 		});
+		server.sync;
 		^synth;
 	}
 	
 	aPositionSynth {
-		var synth = NodeProxy.control(server, 2).source_({
+		var synth = NodeProxy.control(server).source_({
 			var position = [\posx.kr(0.5), \posy.kr(0.5), \poswidth.kr(0.5), \poslock.kr(0)];
+/*			position.poll(1);*/
 			position;
 		});
+		server.sync;
 		^synth;
 	}
 	
