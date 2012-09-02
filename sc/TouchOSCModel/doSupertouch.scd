@@ -60,6 +60,8 @@ LGui();
 	TouchLight.patcher_(\waldstock);
 	x = TouchLight()
 }))
+
+
 x.mainlights[0][\synth].bus.get
 x.mainlights[0][\synth].bus.getSynchronous
 x.mainlights[0][\synth].get(\param1).bus.get

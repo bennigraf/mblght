@@ -124,11 +124,11 @@ TouchControl {
 					bus.setSynchronous(msg[1]);
 				});
 				val = msg[1];
-				if(msg.size > 2, {
+/*				if(msg.size > 2, {
 					actval = msg[1..];
-				}, {
+				}, {*/
 					actval = msg[1];
-				});
+/*				});*/
 				action.value(actval);
 			}, addr, recvAddr);
 		});

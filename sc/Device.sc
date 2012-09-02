@@ -15,6 +15,17 @@ Device {
 		//  channel - holds to total number of dmx channels used by this device
 		//  numArgs - holds number of arguments each method expects
 		//  init - holds the init method which i.e. can set some default values
+		Device.addType(\dim, (
+			channels: 1,
+			numArgs: (dim: 1),
+			dim: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(0, (args[0] * 255).round.asInteger);
+			},
+			init: { |self|
+				self.setDmx(0, 0); // color-shifter??
+			}
+		));
 		Device.addType(\smplrgb, (
 			channels: 3,
 			numArgs: (color: 3),
@@ -38,6 +49,21 @@ Device {
 				self.setDmx(3, 0); // color-shifter??
 				self.setDmx(4, 0); // shutter
 				self.setDmx(5, 0); // macro
+			}
+		));
+		Device.addType(\waldfuck, (
+			channels: 6,
+			numArgs: (color: 3),
+			color: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(1, (args[0] * 255).round.asInteger);
+				self.setDmx(2, (args[1] * 255).round.asInteger);
+				self.setDmx(3, (args[2] * 255).round.asInteger);
+			},
+			init: { |self|
+				self.setDmx(0, 255); // dimmer
+				self.setDmx(4, 0); // macro
+				self.setDmx(5, 0); // strobe
 			}
 		));
 		Device.addType(\waldbarInit, (
@@ -130,6 +156,34 @@ Device {
 			zoom: { |self, zoom|
 				self.setDmx(14, (zoom[0] * 255).round.asInteger);
 			}
+		));
+		Device.addType(\waldStudio, (
+			channels: 7,
+			numArgs: (color: 3, strobe: 1),
+			init: { |self|
+				self.setDmx(6, 255); // dimmer
+				fork{
+					self.setDmx(0, 255);
+					self.setDmx(1, 255);
+					self.setDmx(2, 255);
+					1.wait;
+					self.setDmx(0, 0);
+					self.setDmx(1, 0);
+					self.setDmx(2, 0);
+				};
+				self.setDmx(3, 0); // macrostuff
+				self.setDmx(4, 0);
+				self.setDmx(5, 0);
+			},
+			color: { |self, rgb|
+				self.setDmx(0, (rgb[0] * 255).round.asInteger);
+				self.setDmx(1, (rgb[1] * 255).round.asInteger);
+				self.setDmx(2, (rgb[2] * 255).round.asInteger);	
+			},
+			strobe: { |self, strobe|
+				
+			}
+			
 		));
 	}
 	

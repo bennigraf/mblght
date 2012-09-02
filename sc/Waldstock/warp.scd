@@ -2,15 +2,15 @@
 ////////////// warper for pbind
 (
 SynthDef(\warp, { |out = 0|
-	var sig = 0!48;
+	var sig = 0!36;
 	var start = 1 + Rand(-0.3, 0.3);
 	var dir = \dir.kr(1);
 	var light = Hsv2rgb.kr(Rand(0, 1), 1, 1) * EnvGen.kr(Env([0, 1, 0], (1/2.1)!2));
 	var pos = start + Phasor.kr(0, 1/ControlRate.ir*\dir.kr(1), 0, 2);
-	var panned = MultiPanAz.kr(16, light, pos, 3, -0.5);
+	var panned = MultiPanAz.kr(12, light, pos, 3, -0.5);
 	sig = panned.lag(0.3);
 	DetectSilence.kr(light, time: 1, doneAction: 2);
-	Patcher.all[\waldstock].busesForGroupMethod(\ring, \color).do({ |bus, i|
+	Patcher.all[\waldstock].busesForGroupMethod(\stage, \color).do({ |bus, i|
 		Out.kr(bus, [sig[i*3], sig[i*3+1], sig[i*3+2]])
 	});
 }).add;
@@ -18,16 +18,16 @@ SynthDef(\warp, { |out = 0|
 
 (
 var dur = Prand([1, 1, 0.5, 1.5], inf)/Pfunc({~warpdur ?? 1/4});
-Pdef(\warpaudio, Pbind(\instrument, \warpaudio, \dur, dur));
-Pdef(\warp, Pbind(\instrument, \warp, \dur, dur, \dir, Prand([-1, 1], inf)));
+/*Pdef(\warpaudio, Pbind(\instrument, \warpaudio, \dur, dur));*/
+Pdef(\warp, Pbind(\instrument, \warp, \dur, dur, \dir, Pseq([-1, 1], inf)));
 /*p = Ppar([ a, b ]);*/
 )
 
 /////////////// bckgrnd
 
-m = ProxyChain().addPlayer(\waldstock, \ring, \color, 16, 3);
-
-m.add(\bck, NodeProxy.control(s, 48));
+m = ProxyChain().addPlayer(\waldstock, \stage, \color, 12, 3);
+m.printChain
+m.add(\bck, NodeProxy.control(s, 36));
 m[\bck].source = {
 	var intens = \int.kr(0);
 	var trig = Dust.kr(1/3);
@@ -41,7 +41,7 @@ m[\bck].source = {
 
 ////////////////// stage reacts
 r = ProxyChain().addPlayer(\waldstock, \stage, \color, 6, 3);
-
+r.printChain
 r.add(\react, NodeProxy.control(s, 18));
 
 r[\react].source = {

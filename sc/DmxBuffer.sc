@@ -28,7 +28,7 @@ DmxBuffer {
 	}
 	
 	init {
-		buffer = List.newClear(512).fill(0);
+		buffer = List.newClear(513).fill(0);
 		devices = List();
 		runner = this.makeRunner;
 		runner.play;
@@ -96,6 +96,7 @@ DmxBuffer {
 	}
 	
 	set { |arg1 = nil, arg2 = nil|
+		/// CHANGED: Offset for DMX where those idiots start to count from 1 instead of 0
 		// 3 types:
 		// a) set(channel, value)
 		// b) set(list)
@@ -115,6 +116,7 @@ DmxBuffer {
 				offset = arg2;
 			});
 			arg1.do({ |val, i|
+/*				buffer[i + offset + 1] = val;*/
 				buffer[i + offset] = val;
 			});
 		})

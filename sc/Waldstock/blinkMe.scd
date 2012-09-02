@@ -1,25 +1,28 @@
 LGui()
 
 
-n = ProxyChain().addPlayer(\waldstock, \ring, \color, 16, 3);
+n = ProxyChain();
+n.addPlayer(\waldstock, \stage, \color, 12, 3);
 n.clear(true)
 n.printChain
 
 
 n.printChain
-n.add(\clr, NodeProxy.control(s, 48))
+n.add(\clr, NodeProxy.control(s, 36))
 
 (n[\clr].source = {
-	var sig = ({|n| Hsv2rgb.kr((SinOsc.kr(1/SinOsc.kr(1/4).range(2, 56), pi/16*n)+1/2), 1, 1); }!16).flatten;
+	var sig = ({|n| Hsv2rgb.kr((SinOsc.kr(1/SinOsc.kr(1/4).range(2, 56), pi/16*n)+1/2), 1, 1); }!12).flatten;
 	var pos = LFSaw.kr(1/SinOsc.kr(1/3.8).range(1, 8), 0, 1, 1);
 /*	var width = Decay.kr(Dust.kr(1), 2) * 7 + 2;*/
-	var width = EnvGen.kr(Env.perc(0, 2, 1, 0), Dust.kr(1/2)) * 7 + 2;
+	var width = EnvGen.kr(Env.perc(0, 2, 1, 0), Dust.kr(1/2 * \int.kr(0).linlin(0, 1, 1/2, 8))) * 7 + 2;
 	var rate = width + 6;
-	sig = sig * Blitzen.kr(16, 3, rate: rate, pos: pos, width: width, ori: -0.5).clip;
+	sig = sig * Blitzen.kr(12, 3, rate: rate, pos: pos, width: width, ori: -0.5).clip;
 /*	sig = sig + DelayL.kr(Decay2.kr(Mirror.kr(16,3,sig,1), 0.5, 1.5, 0.3), 0.15, 0.15);*/
 /*	sig = sig + (Decay.kr(Mirror.kr(16,3,sig,1), 2).clip * 0.01);*/
 	sig;
 })
+n[\clr].pause
+n[\clr].resume
 Env.perc(0, 2, 1, 0).plot
 n[\clr].source = nil
 n.remove(\clr)

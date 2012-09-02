@@ -93,6 +93,7 @@ Patcher {
 /*		[dmxData, addr].postln;*/
 		buffers.do({ |buf|
 			buf.set(dmxData, addr);
+/*			buf.set(dmxData, addr - 1); // dmx starts at 1, everything else in the world at 0*/
 		});
 	}
 	removeBuffer { |index|
@@ -486,10 +487,11 @@ Patcher {
 	}
 	
 	
-	havefun {
+	havefun { |group = 'stage'|
+		"Fun".postln;
 		if(aFun.notNil, { aFun.free });
 		aFun = {
-			var buses = this.busesForMethod(\color);
+			var buses = this.busesForGroupMethod(\color);
 			var point1 = LFNoise1.kr(8.3/120).range(0, 4).fold(0, 1).lag3(0.5);
 			var point2 = LFNoise2.kr(7.2/130).range(0, 4).fold(0, 1).lag3(0.5);
 			buses.do({ |bus, n|
@@ -507,7 +509,16 @@ Patcher {
 		}.play;
 	}
 	enoughfun {
+		var black;
 		aFun.free;
+		black = {
+			var buses = this.busesForMethod(\color);
+			var color = [0, 0, 0];
+			buses.do({ |bus, n|
+				Out.kr(bus, color);
+			});
+			EnvGen.kr(Env.perc(1), doneAction: 2);
+		}.play;
 		aFun = nil;
 	}
 }

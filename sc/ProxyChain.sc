@@ -28,6 +28,7 @@ ProxyChain {
 					Out.kr(bus.subBus(j), in[offset+j]);
 				});
 			});
+			0;
 		};
 	}
 	
