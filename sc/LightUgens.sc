@@ -5,7 +5,7 @@ Hsv2rgb : UGen {
     *kr { arg h = 0.0, s = 0.0, v = 0.0;
 		var rgb = DC.kr!3;
 		var rgbhlpr = DC.kr!3;
-		var hsv = [h, s, v];
+		var hsv = [h.wrap(0, 1), s.clip(0, 1), v.clip(0, 1)];
 		rgb = Select.kr(hsv[1].ceil, [ // 0 or 1, 0 means no color (no saturation)
 			hsv[2]!3;
 		, {
