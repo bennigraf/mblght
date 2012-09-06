@@ -89,6 +89,7 @@ DmxBuffer {
 					((1/fps) - (newtime - time)).wait;
 				}, {
 					"frame rate problem!".postln;
+					(1/fps).wait;
 				});
 			};
 		});
