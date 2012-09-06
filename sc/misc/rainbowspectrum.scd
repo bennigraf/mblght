@@ -6,11 +6,15 @@ s.boot;
 p = Patcher.new(\spectrum);
 
 b = DmxBuffer.new();
-b.fps = 60;
+b.fps = 30;
 SerialPort.devices;
 r = RainbowSerial.new(3);
 
 b.addDevice(r);
+
+r.close
+b.removeDevice(0)
+b.devices
 
 p.addBuffer(b);
 
@@ -24,7 +28,7 @@ p.addBuffer(b);
 (
 x.free;
 x = {
-	var freqs = (50,58..110).midicps;
+	var freqs = (38,46..98).midicps;
 	var buses = p.busesForMethod(\color);
 	var in = SoundIn.ar([0, 1]).sum/2;
 	var ampcorr = A2K.kr(Amplitude.ar(in, 0.01, 0.1).ampdb.abs.lagud(180, 0.001)) - 3;
