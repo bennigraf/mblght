@@ -32,9 +32,8 @@ x = {
 	var satmod = LFNoise2.kr(1/9) + 1 / 4 * 0;
 	amps.do{ |amp, i|
 		8.do{ |j|
-/*			var aval = (amp + (56 - (j*6))).clip(0, 1).lagud(0.1, 1);*/
 			var aval = (amp + (28 - (j*3))).clip(0, 1).lagud(0.1, 1);
-/*			var clr = Hsv2rgb.kr(aval/6 + huemod + (3/6 * (j/8)), 1-satmod, aval);*/
+			// could remove wrapping, now in Hsv2rgb-Ugen
 			var clr = Hsv2rgb.kr((huemod + (2/6 * (j/8))).wrap(0, 1), 1-satmod, aval);
 			Out.kr(buses[i*8 + j], clr);
 		}
