@@ -89,7 +89,7 @@ DmxBuffer {
 					((1/fps) - (newtime - time)).wait;
 				}, {
 					"frame rate problem!".postln;
-					(1/fps).wait;
+/*					(1/fps).wait;*/
 				});
 			};
 		});
@@ -189,6 +189,7 @@ OlaPipe {
 
 RainbowSerial {
 	var sp; // holds serialport
+	var lasttime; // to limit stuff to 20 fps to avoid overloading serial connection
 	
 	*new { |device|
 		^super.new.init(device);
@@ -206,7 +207,7 @@ RainbowSerial {
 		});
 		("opening Port "++SerialPort.devices[device]).postln;
 		sp = SerialPort(device, baudrate: 38400, crtscts: true);
-		
+		lasttime = 0;
 	}
 	close {
 		sp.close;
@@ -218,6 +219,7 @@ RainbowSerial {
 		var realOutData = Int8Array.newClear(96);
 		var byte1, byte2;
 		var index = 0; // needed as manual counter...
+		
 		buffer.do({ |obj, i|
 			if(i < 192, {
 				fbuf[i] = obj;
@@ -243,7 +245,11 @@ RainbowSerial {
 		
 		// finally, put to port...
 		if(sp.notNil, {
-			sp.putAll(realOutData);
+			// make sure we don't overload the serial connection and limit stuff to 20 fps for now
+			if(thisThread.seconds - lasttime > (1/20), {
+				lasttime = thisThread.seconds;
+				sp.putAll(realOutData);
+			});
 		});
 		
 	}
