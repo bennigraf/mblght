@@ -186,7 +186,8 @@ OlaPipe {
 	}
 }
 
-
+// connect to rainbowduinoboard with 8x8 rgb matrix on it running "firmwre_4bit"
+// (see DirectMode, Rainbowduino Dashboard, ...)
 RainbowSerial {
 	var sp; // holds serialport
 	var lasttime; // to limit stuff to 20 fps to avoid overloading serial connection
