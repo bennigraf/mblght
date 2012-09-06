@@ -123,8 +123,12 @@ DmxBuffer {
 		})
 	}
 	
-	get { |channel|
-		^buffer[channel];
+	get { |channel = nil|
+		if(channel.notNil, {
+			^buffer[channel];
+		}, {
+			^buffer
+		});
 	}
 }
 
