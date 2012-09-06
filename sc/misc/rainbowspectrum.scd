@@ -27,10 +27,13 @@ x = {
 	var freqs = (50,58..110).midicps;
 	var buses = p.busesForMethod(\color);
 	var in = SoundIn.ar([0, 1]).sum/2;
+	var ampcorr = A2K.kr(Amplitude.ar(in, 0.01, 0.1).ampdb.abs.lagud(180, 0.001)) - 3;
 	var amps = A2K.kr(Amplitude.ar(BPF.ar(in, freqs), 0.01, 0.1)).ampdb;
 	var huemod = LFNoise2.kr(1/18) + 1;
 	var satmod = LFNoise2.kr(1/9) + 1 / 4 * 0;
-	amps.do{ |amp, i|
+/*	var lagamps = amps.abs.lagud(80, 0.001);*/
+	var modamps = amps + ampcorr;
+	modamps.do{ |amp, i|
 		8.do{ |j|
 			var aval = (amp + (28 - (j*3))).clip(0, 1).lagud(0.1, 1);
 			// could remove wrapping, now in Hsv2rgb-Ugen
