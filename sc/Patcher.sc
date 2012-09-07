@@ -32,6 +32,23 @@ Patcher {
 	
 	*initClass {
 		all = ();
+		
+		// default lighting event. Allows to play light Pattern style:
+		// Pbind(\type, \light, \method, \dim, \data, Pwhite(0.1, 0.9, 5), \dur, 1).play
+		Event.addEventType(\light, {
+			var patcher;
+			if(~patcher.isNil, {
+				patcher = Patcher.default;
+			}, {
+				patcher = Patcher.all[~patcher];
+			});
+			currentEnvironment.postln;
+			if(patcher.notNil, {
+				patcher.message(currentEnvironment);
+			}, {
+				"Patcher not reachable!".postln;
+			});
+		});
 	}
 	
 	*new { |id|
