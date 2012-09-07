@@ -491,7 +491,7 @@ Patcher {
 		"Fun".postln;
 		if(aFun.notNil, { aFun.free });
 		aFun = {
-			var buses = this.busesForGroupMethod(\color);
+			var buses = this.busesForMethod(\color);
 			var point1 = LFNoise1.kr(8.3/120).range(0, 4).fold(0, 1).lag3(0.5);
 			var point2 = LFNoise2.kr(7.2/130).range(0, 4).fold(0, 1).lag3(0.5);
 			buses.do({ |bus, n|
