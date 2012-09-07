@@ -46,3 +46,6 @@ x = {
 		}
 	}
 }.play;)
+
+p.havefun
+p.enoughfun
