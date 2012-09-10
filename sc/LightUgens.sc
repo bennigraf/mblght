@@ -172,3 +172,38 @@ Blitzen : UGen {
 /*		^sig;*/
 	}
 }
+
+
+
+Pan2d {
+	classvar <rate = \control;
+	
+	*kr {
+		arg in, 
+			gridx, 
+			gridy,
+			posx,
+			posy;
+		
+		// assuming grid outputs stuff l2r t2b 
+		// posx/posy (-1 to 1) is actually the phase of a sine (0 to pi) that's spread
+		// over the whole grid
+		
+		var outs = DC.kr(0)!(gridx * gridy);
+		var pih = pi/2;
+		posx = posx.linlin(-1, 1, 0, pi, nil);
+		posy = posx.linlin(-1, 1, 0, pi, nil);
+		
+		gridy.do{ |j|
+			gridx.do{ |i|
+				outs[(j * gridx) + i] = in
+					* SinOsc.kr(0, pih + posx + (pih * i / 5) )
+					* SinOsc.kr(0, pih + posy + (pih * j / 5) );
+			}
+		}
+		
+		^outs;
+		
+	}
+		
+}
