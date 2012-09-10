@@ -86,6 +86,11 @@ Patcher {
 		*/
 	}
 	
+	// makes this patcher the default patcher
+	makeDefault {
+		default = this;
+	}
+	
 	end {
 		// frees buses, stop routines, remove devices?
 		devices.do({ |dev|
