@@ -26,10 +26,8 @@ Hsv2rgb : UGen {
 }
 
 
-/*Rotator.dump.kr*/
-/*Rotator.kr(20, 3)*/
+
 Rotator : UGen {
-	
 	classvar <rate = \control;
 	
 	*kr { 
