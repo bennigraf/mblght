@@ -66,7 +66,7 @@ Rotator : UGen {
 			out[outChanNum] = sum;
 		});
 		
-		^out.lag(lag); // smothes pannings a bit
+		^out.lag(lag); // smoothes pannings a bit
 	}
 }
 		
@@ -159,15 +159,11 @@ Blitzen : UGen {
 				sig = [in];
 			});
 		});
+		
 		out = { |n|
-/*			out[n] = carrier[(n/groups).floor.asInteger];*/
-/*			carrier[(n/groups).floor.asInteger];*/
 			sig.wrapAt(n) * carrier[(n/groups).floor.asInteger];
 		}!(channels * groups);
-/*		myAmp.poll;*/
 		^out;
-/*		^myAmp;*/
-/*		^sig;*/
 	}
 }
 
@@ -177,31 +173,34 @@ Pan2d {
 	classvar <rate = \control;
 	
 	*kr {
-		arg in, 
-			gridx, 
-			gridy,
-			posx,
-			posy;
-		
+		arg gridx = 8,
+			gridy = 8,
+			in,
+			posx = 0,
+			posy = 0,
+			width = 0;
+
 		// assuming grid outputs stuff l2r t2b 
 		// posx/posy (-1 to 1) is actually the phase of a sine (0 to pi) that's spread
 		// over the whole grid
-		
-		var outs = DC.kr(0)!(gridx * gridy);
-		var pih = pi/2;
-		posx = posx.linlin(-1, 1, 0, pi, nil);
-		posy = posx.linlin(-1, 1, 0, pi, nil);
-		
+
+		var outs = 0!(gridx * gridy);
+
+		width = width.linexp(0, 1, 50, 1);
+
+		posx = posx.linlin(-1, 1, -pi/2, pi/2);
+		posy = posy.linlin(-1, 1, -pi/2, pi/2);
+
 		gridy.do{ |j|
 			gridx.do{ |i|
-				outs[(j * gridx) + i] = in
-					* SinOsc.kr(0, pih + posx + (pih * i / 5) )
-					* SinOsc.kr(0, pih + posy + (pih * j / 5) );
+				outs[(j * gridy) + i] = in
+				* (pi/gridx * i + posx ).sin.clip(0, 1)
+				* (pi/gridy * j + posy ).sin.clip(0, 1)
+				** width;
 			}
-		}
+		};
 		
 		^outs;
-		
 	}
 		
 }

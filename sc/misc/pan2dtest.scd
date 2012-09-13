@@ -1,3 +1,11 @@
+LGui()
+Patcher.default.message((method: \color, data:[0, 1, 1], devices: [2]))
+Patcher.default.devices.do({|dev|
+	dev.device.dump;
+})
+Patcher.all.at('2d').makeDefault
+Patcher.all.at('2d').devices[0].device.dump
+Patcher.default.busesForMethod(\color).size
 p = Patcher.new(\spectrum);
 
 b = DmxBuffer.new();
@@ -14,7 +22,7 @@ p.addBuffer(b);
 
 
 (
-var gridx = 8, gridy = 8;
+var gridx = 6, gridy = 6;
 x.free;
 x = {
 	arg posx = 0,
@@ -25,17 +33,19 @@ x = {
 /*	var in = [1, 0, 0];*/
 /*	var posx = MouseX.kr(-1, 1),
 		posy = MouseY.kr(-1, 1);*/
-/*	var posx = SinOsc.kr(1/3) / 2,
-		posy = SinOsc.kr(1/3, pi/2) / 2;*/
 	
 	// assuming grid outputs stuff l2r t2b 
 	// posx/posy (-1 to 1) is actually the phase of a sine (0 to pi) that's spread
 	// over the whole grid
 	
-	var buses = p.busesForMethod(\color);
+	var buses = Patcher.default.busesForMethod(\color);
 	
 	var outs = 0!(gridx * gridy);
 	
+	posx = SinOsc.kr(1/3) / 2;
+	posy = SinOsc.kr(1/3.32, pi/2) / 2;
+	
+	width = SinOsc.kr(1/7)/2+0.5;
 	width = width.linexp(0, 1, 50, 1).lag(0.5);
 	
 	posx = posx.linlin(-1, 1, -pi/2, pi/2).lag(0.5);
@@ -90,7 +100,20 @@ p.message((method: \color, data: [0,0,0]))
 a.free
 a = SynthDef(\test, {
 	var color = SinOsc.kr({0.4.rand}!3 + 0.1, pi.rand, mul: 0.5, add: 0.5);
-	p.busesForMethod(\color).do({ |bus, i|
+	Patcher.default.busesForMethod(\color).do({ |bus, i|
 		Out.kr(bus, (color - (0.02 * i)).fold(0, 1));
 	});
 }).play;
+
+(a.free;
+a = SynthDef(\test2, { |out=0|
+	var in = Hsv2rgb.kr(LFNoise1.kr(12) * 0.1 + LFSaw.kr(1/12).range(0, 1), 1, 1);
+	var posx = SinOsc.kr(1/3);
+	var posy = SinOsc.kr(1/4);
+	var width = 0.5;
+	var outs = Pan2d.kr(6, 6, in, posx, posy, width);
+	var modulor = SinOsc.kr(1/19).range(0, 1);
+	Patcher.default.busesForMethod(\color).do({ |bus, i|
+		Out.kr(bus, outs[i] * Trig.kr(Dust.kr(13, 1/20, mul: modulor)));
+	});
+}).play;)
