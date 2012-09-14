@@ -42,7 +42,7 @@ Patcher {
 			}, {
 				patcher = Patcher.all[~patcher];
 			});
-			currentEnvironment.postln;
+			//currentEnvironment.postln;
 			if(patcher.notNil, {
 				patcher.message(currentEnvironment);
 			}, {

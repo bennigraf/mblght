@@ -153,8 +153,10 @@ OlaPipe {
 		pipe = Pipe(pathToBin ++ " -u " ++ universe, "w");
 	}
 	close {
-		pipe.close;
-		pipe = nil;
+		if(pipe.notNil, {
+			pipe.close;
+			pipe = nil;
+		});
 	}
 	
 	send { | buffer |

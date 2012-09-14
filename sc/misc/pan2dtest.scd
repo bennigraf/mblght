@@ -114,6 +114,6 @@ a = SynthDef(\test2, { |out=0|
 	var outs = Pan2d.kr(6, 6, in, posx, posy, width);
 	var modulor = SinOsc.kr(1/19).range(0, 1);
 	Patcher.default.busesForMethod(\color).do({ |bus, i|
-		Out.kr(bus, outs[i] * Trig.kr(Dust.kr(13, 1/20, mul: modulor)));
+		Out.kr(bus, outs[i]);
 	});
 }).play;)
