@@ -23,7 +23,76 @@ Device {
 				self.setDmx(0, (args[0] * 255).round.asInteger);
 			},
 			init: { |self|
-				self.setDmx(0, 0); // color-shifter??
+				self.setDmx(0, 0);
+			}
+		));
+		Device.addType(\camera, (
+			channels: 16,
+			numArgs: (camerapos: 3, cameraaim: 3),
+			camerapos: { |self, args|
+				// set pos (x, y, z) and direction (pan, title – no pitch for now) if wanted
+				// split x, y, z to msb/lsb (coarse/fine)
+				var x = [(args[0] * 255).floor, (args[0] * 255 % 1 * 255).round];
+				var y = [(args[1] * 255).floor, (args[1] * 255 % 1 * 255).round];
+				var z = [(args[2] * 255).floor, (args[2] * 255 % 1 * 255).round];
+
+				self.setDmx(0, x[0]);
+				self.setDmx(1, x[1]);
+				self.setDmx(2, y[0]);
+				self.setDmx(3, y[1]);
+				self.setDmx(4, z[0]);
+				self.setDmx(5, z[1]);
+			},
+			cameraaim: { |self, args|
+				// set pan/tilt to where the camera should look to...
+				// args: aimx, aimy, aimz
+				var pans, tilts;
+				
+				// get current camera position:
+				var dmx = self.getDmx;
+				var xcam = dmx[0] / 255 + (dmx[1] / 255 / 255);
+				var ycam = dmx[2] / 255 + (dmx[3] / 255 / 255);
+				var zcam = dmx[4] / 255 + (dmx[5] / 255 / 255);
+				
+				// calculate stuff. 
+				// 1. distance on x/z-plane using pythagoras
+				var d = ((xcam - args[0])**2 + ((zcam - args[2])**2)).sqrt;
+				// 2. "height"-difference (delta y)
+				var h = ycam - args[1];
+				// 3. tilt from 1. and 2.
+				var tilt = (h / d).atan;
+				// 4. pan: delta x / delta z...
+				// but counter-clockwise!?
+				var dx = xcam - args[0];
+				var dz = zcam - args[2];
+				var pan = (dx / dz).atan * -1;
+
+				if(dz < 0, {
+					pan = pan + pi;
+				});
+
+				pan = pan.wrap(0, 2pi);
+				tilt = tilt.wrap(0, 2pi);
+								
+				tilts = [(tilt/2pi * 255).floor, (tilt/2pi * 255 % 1 * 255).round];
+				pans = [(pan/2pi * 255).floor, (pan/2pi * 255 % 1 * 255).round];
+				
+				self.setDmx(6, pans[0]);
+				self.setDmx(7, pans[1]);
+				self.setDmx(8, tilts[0]);
+				self.setDmx(9, tilts[1]);
+			},
+			init: { |self|
+				self.setDmx(0, 128);
+				self.setDmx(1, 0);
+				self.setDmx(2, 129);
+				self.setDmx(3, 0);
+				self.setDmx(4, 140);
+				self.setDmx(5, 0);
+				
+				self.setDmx(13, 20); // ambient light
+				self.setDmx(14, 128); // overall light?? alpha-value??
+				self.setDmx(15, 40); // "athmosphere" -> foggyness
 			}
 		));
 		Device.addType(\smplrgb, (
@@ -156,6 +225,46 @@ Device {
 			zoom: { |self, zoom|
 				self.setDmx(14, (zoom[0] * 255).round.asInteger);
 			}
+		));
+		Device.addType(\ClrChngr, (
+			channels: 11,
+			numArgs: (color: 3, cmyk: 4),
+			init: { |self|
+				// shutter open:
+				self.setDmx(4, 255);
+				// white/poweron/intensity:
+				self.setDmx(5, 255);
+				// zoom: 
+				self.setDmx(7, 255);
+			},
+			color: { |self, rgb|
+				// rgb 2 cmyk:
+				var cmyk = [0, 0, 0, 0];
+				rgb = rgb.clip(0, 1); // clip incoming...
+				// another try: http://stackoverflow.com/questions/2426432/convert-rgb-color-to-cmyk
+				//Black   = minimum(1-Red,1-Green,1-Blue)
+				//Cyan    = (1-Red-Black)/(1-Black)
+				//Magenta = (1-Green-Black)/(1-Black)
+				//Yellow  = (1-Blue-Black)/(1-Black)
+				cmyk[3] = (1.0-rgb).minItem;
+				cmyk[0] = (1 - rgb[0] - cmyk[3]) / (1 - cmyk[3]);
+				cmyk[1] = (1 - rgb[1] - cmyk[3]) / (1 - cmyk[3]);
+				cmyk[2] = (1 - rgb[2] - cmyk[3]) / (1 - cmyk[3]);
+
+				// set cmyk...
+				self.setDmx(1, (cmyk[0] * 255).round.asInteger);
+				self.setDmx(2, (cmyk[1] * 255).round.asInteger);
+				self.setDmx(3, (cmyk[2] * 255).round.asInteger);
+				self.setDmx(5, 255 - (cmyk[3] * 255).round.asInteger); // k is intensity 'inversed'
+			},
+			// careful! Don't write multiple actions that overwrite each other! Oh noes...
+/*			cmyk: { |self, cmyk|
+				cmyk = (cmyk * 255).round.asInteger;
+				self.setDmx(8, cmyk[0]);
+				self.setDmx(9, cmyk[1]);
+				self.setDmx(10, cmyk[2]);
+				self.setDmx(16, 255 - cmyk[3]); // k is intensity 'inversed'
+			},*/
 		));
 		Device.addType(\waldStudio, (
 			channels: 7,
