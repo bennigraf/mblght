@@ -1,22 +1,26 @@
+(
 p = Patcher.new(\thetower);
 
 b = DmxBuffer.new();
 
-o = OlaPipe.new(0)
+o = OlaPipe.new(0);
 
 b.addDevice(o);
-b.removeDevice(0)
+// b.removeDevice(0)
 
-b.devices[0].end
-b.devices.removeAt(0)
+// b.devices[0].end
+// b.devices.removeAt(0)
 
 p.addBuffer(b);
+p.fps = 20;
+b.fps = 20;
 
 160.do({ |i|
 	p.addDevice(Device.new(\dim, i));
 });
 
-Patcher.default.addDevice(Device.new(\camera, 449));
+Patcher.default.addDevice(Device.new(\camera, 399));
+)
 p.devices
 p.removeDevice(0)
 
@@ -38,13 +42,55 @@ Pdef(\test).stop
 y.free;
 y = {
 	var bus = Patcher.default.busesForMethod(\camerapos);
-/*	var aim = p.busesForMethod(\cameraaim);*/
-	var posx = SinOsc.kr(0.05, 0, 0.015, 0.502);
-	var posz = SinOsc.kr(0.05, pi/2, 0.015, 0.502);
-	var posy = SinOsc.kr(0.067, 0, 0.0011, 0.498);
+	var phase = Phasor.kr(0, ControlDur.ir * 2pi / 100, 0, 2pi);
+	var posx = SinOsc.kr(0, phase, 0.03, 0.502);
+	var posz = SinOsc.kr(0, phase + (pi/2), 0.03, 0.502);
+	var posy = SinOsc.kr(0, phase * 0.3852, 0.0031, 0.516);
 	Out.kr(bus[0], [posx, posy, posz]);
 	0;
-}.play)
+}.play
+)
 
-Patcher.default.message((method: \cameraaim, data: [0.502, 0.498, 0.502]))
+Patcher.default.message((method: \cameraaim, data: [0.502, 0.505, 0.502]))
 Patcher.default.message((method: \camerapos, data: [0.502, 0.507, 0.515]))
+
+
+
+(
+z.free;
+z = {
+	var buses = Patcher.default.busesForMethod(\dim);
+	// var channels = { |i| SinOsc.kr(1/12, 2pi / 160 * i, 0.5, 0.5); }!160 ** 1;
+	var channels = { |i| SinOsc.kr(1/12, 2pi / 20 * i, 0.5, 0.5); } !20;
+	buses.do({|bus, i| Out.kr(bus, channels[(i/8).floor]) });
+	// channels.do({|chan, i| Out.kr(buses[i], chan) });
+	0;
+}.play;
+)
+
+
+(
+z.free;
+z = {
+	var buses = Patcher.default.busesForMethod(\dim);
+	// var channels = { |i| SinOsc.kr(1/12, 2pi / 160 * i, 0.5, 0.5); }!160 ** 1;
+	var channels = { |i| SinOsc.kr(1/3.8, 2pi / 20 * i, 0.5, 0.5); } !20 ** LFSaw.kr(1/11.4).linexp(-1, 1, 0.5, 100);
+	buses.do({|bus, i| Out.kr(bus, Decay2.kr(Dust.kr(channels[(i/8).floor] * 5), 0.5, 1)) });
+	// channels.do({|chan, i| Out.kr(buses[i], chan) });
+	0;
+}.play;
+)
+
+
+/// the tower interactive?
+/*
+	twitter: various commands
+	base: slow and a little decent wobbles, light waves around the bottom 1 or 2 rows...
+	
+	commands: light up, calm down, blink, faster, slower
+	react to direction a tweet comes from?
+	
+	
+	
+	
+ */
