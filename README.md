@@ -8,10 +8,10 @@ Documentation
 
 ...is really spare until now. In short: Install OLA/olad and get it running, use LGui.new() to do some basic setup tasks, find out the rest yourself. Or have fun with this little snippet:
 
-	SynthDef(\test, {  
-		var color = SinOsc.kr({0.4.rand}!3 + 0.1, pi.rand, mul: 0.5, add: 0.5);  
+	SynthDef(\test, {
+		var color = SinOsc.kr({0.4.rand}!3 + 0.1, pi.rand, mul: 0.5, add: 0.5);
 		Patcher.default.busesForMethod(\color).do({ |bus, i|
- 			Out.kr(bus, (color - (0.02 * i)).fold(0, 1));
+			Out.kr(bus, (color - (0.02 * i)).fold(0, 1));
  		});
 	}).play;
 
