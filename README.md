@@ -10,9 +10,9 @@ Documentation
 
 	SynthDef(\test, {  
 		var color = SinOsc.kr({0.4.rand}!3 + 0.1, pi.rand, mul: 0.5, add: 0.5);  
-		Patcher.default.busesForMethod(\color).do({ |bus, i|  
- 			Out.kr(bus, (color - (0.02 * i)).fold(0, 1));  
- 		});  
+		Patcher.default.busesForMethod(\color).do({ |bus, i|
+ 			Out.kr(bus, (color - (0.02 * i)).fold(0, 1));
+ 		});
 	}).play;
 
 You find more examples in /misc, /scenes and /waldstock.
