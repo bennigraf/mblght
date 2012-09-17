@@ -45,7 +45,7 @@ y = {
 	var phase = Phasor.kr(0, ControlDur.ir * 2pi / 100, 0, 2pi);
 	var posx = SinOsc.kr(0, phase, 0.03, 0.502);
 	var posz = SinOsc.kr(0, phase + (pi/2), 0.03, 0.502);
-	var posy = SinOsc.kr(0, phase * 0.3852, 0.0031, 0.516);
+	var posy = SinOsc.kr(0, phase * 0.3852, 0.0061, 0.516);
 	Out.kr(bus[0], [posx, posy, posz]);
 	0;
 }.play
@@ -94,3 +94,32 @@ z = {
 	
 	
  */
+(
+z.free;
+z = { |h = 4|
+	var buses = Patcher.default.busesForMethod(\dim);
+	var phasors = Phasor.kr(0, ControlDur.ir * 2 * LFNoise2.kr({0.45.rand}!11 * \intens.kr(1)) * \intens.kr(1), 0, 2pi);
+	var ctlr = phasors;
+	var outs = 0!160;
+	var height = h.lag(2);
+	var channels = { |i|  
+		var phases = 2pi / 20 * i + ctlr;
+		var val = (phases.sin/2+0.5**2).sum/(phases.size);
+		8.do({ |j|
+			outs[i * 8 + j] = (1 - (val/8 * height).round(1/8)) <= (j / 8);
+		});
+	}!20;
+	buses.do({|bus, i| 
+		Out.kr(bus, outs[i].lag(0.7));
+	});
+	0;
+}.play;
+)
+z.set(\h, 8)
+z.set(\intens, 1)
+
+
+
+
+
+
