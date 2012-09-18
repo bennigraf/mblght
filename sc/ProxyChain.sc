@@ -22,7 +22,13 @@ ProxyChain {
 		this.stickToBottom(\player);
 		this.at(\player).source = {
 			var in = \in.kr(0!(channels*chansPerMethod));
-			Patcher.all.at(patcher).busesForGroupMethod(group, method).do({|bus, i|
+			var buses;
+			if(group.isNil, {
+				buses = Patcher.all.at(patcher).busesForMethod(method);
+			}, {
+				buses = Patcher.all.at(patcher).busesForGroupMethod(group, method);
+			});
+			buses.do({|bus, i|
 				var offset = i * chansPerMethod;
 				chansPerMethod.do({ |j|
 					Out.kr(bus.subBus(j), in[offset+j]);
@@ -164,7 +170,7 @@ ProxyChain {
 	}
 	
 	stickToBottom { |index = nil|
-		// usage: pc.stickToBottom(pc[4]); - should give proxy returned by pc[4] as argument.
+		// usage: pc.stickToBottom(\nodename); - should give proxy returned by pc[4] as argument.
 		var node;
 		
 		if(index.isKindOf(Symbol), {
@@ -201,7 +207,6 @@ ProxyChain {
 	unStickFromTop {
 		topprox = nil;
 	}
-	
 	
 	updateChain {
 		// disconnect (unmap) all nodes, reconnect (map inputs) them in order...
