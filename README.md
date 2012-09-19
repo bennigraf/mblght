@@ -15,7 +15,7 @@ Documentation
 		});
 	}).play;
 
-You find more examples in /misc, /scenes and /waldstock.
+More documentation is hopefully to come, but until then you find more examples in /misc, /scenes and /waldstock.
 
 Examples
 --------
