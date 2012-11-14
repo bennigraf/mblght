@@ -26,3 +26,8 @@ https://www.facebook.com/media/set/?set=a.399699220085179.103947.172943649427405
 Two short videos demonstrating what's possible but using alternate visualisations (not the real thing):
 https://www.facebook.com/photo.php?v=10151593592457715
 https://www.facebook.com/photo.php?v=10151588297902715
+
+Notice
+------
+
+This software was created as part of my Bachelor's Thesis at the Institute for Musicology and Music Informatics (IMWI) at the University of Music, Karlsruhe (Germany).
