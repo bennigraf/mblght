@@ -1,7 +1,9 @@
 mblght
 ======
 
-This is my try on using SuperCollider DSP magic (on scsynth) to synthesize signals which can control various lighting fixtures using the Open Lighting Architecture (OLA) to play out Artnet and/or DMX signals.
+This is my try on using SuperCollider DSP magic (running on scsynth) to synthesize signals which can control various lighting fixtures using the Open Lighting Architecture (OLA) to play out Artnet and/or DMX signals.
+
+Further information is available here: http://www.bennigraf.de/mblght/
 
 Documentation
 -------------
