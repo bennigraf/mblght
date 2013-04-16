@@ -31,6 +31,8 @@ Patcher {
 	var aFun; // some vegas mode...
 	
 	*initClass {
+		Class.initClassTree(Event);
+		
 		all = ();
 		
 		// default lighting event. Allows to play light Pattern style:
