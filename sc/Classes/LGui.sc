@@ -121,10 +121,12 @@ LGui_Main {
 		updateActions.add({
 			var ptchrs = Patcher.all;
 			var ptchrarr = [];
-			ptchrs.keysDo({ |ptchr|
-				ptchrarr = ptchrarr.add(ptchr);
+			if(ptchrs.notNil, {
+				ptchrs.keysDo({ |ptchr|
+					ptchrarr = ptchrarr.add(ptchr);
+				});
+				ptchrbx.items_(ptchrarr);
 			});
-			ptchrbx.items_(ptchrarr);
 		});
 		
 		// buttons for edit/manage devices/remove of patcher
