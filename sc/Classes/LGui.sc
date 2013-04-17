@@ -1,10 +1,10 @@
 LGui {
-	*new {
-		^super.new.init();
+	*new { |silent = false, loadSettings|
+		^super.new.init(silent, loadSettings);
 	}
 	
-	init {
-		LGui_Main();
+	init { |silent = false, loadSettings|
+		LGui_Main(silent, loadSettings);
 	}
 	
 }
@@ -12,23 +12,34 @@ LGui {
 
 LGui_Main {
 	
-	var window;
+	var <window;
 	var server;
 	var updateActions;
 	var settingsFile;
 	
-	*new {
-		^super.new.init();
+	// silent mode doesn't open any window but allows to load default settings
+	*new { |silent = false, loadSettings|
+		^super.new.init(silent, loadSettings);
 	}
 	
-	init {
+	init { |silent = false, loadSettings|
 		server = Server.default;
 		updateActions = List();
-		window = Window.new("Lighting Controller", Rect(400, 400, 400, 400)).front;
 		settingsFile = Platform.userConfigDir+/+"LGuiConfig.scd";
 		this.checkForSettings;
-		this.makeDefaultWindow();
-		this.updateView();
+		
+		if(silent, {
+			if(loadSettings.notNil, {
+				this.loadSettings(loadSettings.asSymbol);
+			}, {
+				this.loadSettings(\default);
+			});
+		});
+		if(silent.not({ 
+			window = Window.new("Lighting Controller", Rect(400, 400, 400, 400)).front;
+			this.makeDefaultWindow();
+			this.updateView();
+		}));
 	}
 	
 	checkForSettings {
@@ -287,13 +298,17 @@ LGui_Main {
 		settings = file.readAllString.interpret;
 		file.close;
 /*		Archive.read("LGuiArchive.scd");*/
-		Patcher.all.do({ |ptchr|
-			ptchr.end;
-		});
-		server.waitForBoot({
-			this.applySettings(settings[name.asSymbol]);
-/*			this.applySettings(Archive.global[name.asSymbol]);*/
-			this.updateView;
+		if(settings[name.asSymbol].notNil, {
+			Patcher.all.do({ |ptchr|
+				ptchr.end;
+			});
+			server.waitForBoot({
+				this.applySettings(settings[name.asSymbol]);
+/*				this.applySettings(Archive.global[name.asSymbol]);*/
+				this.updateView;
+			});
+		}, {
+			("Settings " ++ name.asString ++ " not found!!").postln;
 		});
 	}
 	applySettings { |settings|
