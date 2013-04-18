@@ -107,7 +107,7 @@ Device {
 		));
 		Device.addType(\waldpar, (
 			channels: 6,
-			numArgs: (color: 3),
+			numArgs: (color: 3, strobe: 1),
 			color: { |self, args|
 				// return list with dmx slots/addresses (starting from 0 for this device) and values
 				self.setDmx(0, (args[0] * 255).round.asInteger);
@@ -118,6 +118,9 @@ Device {
 				self.setDmx(3, 0); // color-shifter??
 				self.setDmx(4, 0); // shutter
 				self.setDmx(5, 0); // macro
+			},
+			strobe: { |self, args|
+				self.setDmx(4, (args[0] * 255).round.asInteger);
 			}
 		));
 		Device.addType(\waldfuck, (

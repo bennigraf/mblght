@@ -370,7 +370,11 @@ Patcher {
 /*				deviceList[num % deviceList.size].action(method, data);*/
 /*				this.setBuffers(deviceList[num%deviceList.size].getDmx, deviceList[num%deviceList.size].address);*/
 				// rewrite: write data to bus instead of device directly.
-				deviceList[num % deviceList.size].buses[method].setn(data);
+				if(data.isKindOf(Array), {
+					deviceList[num % deviceList.size].buses[method].setn(data);
+				}, {
+					deviceList[num % deviceList.size].buses[method].set(data);
+				});
 			});
 		});
 	}
