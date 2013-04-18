@@ -531,11 +531,13 @@ Patcher {
 						+ SinOsc.kr(0, distance.sum / 2 * pi + LFTri.kr(1/18.83), 0.4)
 							/ 3.6;
 				var color = Hsv2rgb.kr(sins.fold(0, 1), 1, 1).lag3(2);
-				Out.kr(bus, color);
+				Out.kr(bus, color) * Line.kr(0, 1, 5);
 			});
 			0;
 		}.play;
 	}
+	
+	// end vegas mode
 	enoughfun {
 		var black;
 		aFun.free;
@@ -543,9 +545,9 @@ Patcher {
 			var buses = this.busesForMethod(\color);
 			var color = [0, 0, 0];
 			buses.do({ |bus, n|
-				Out.kr(bus, color);
+				var sig = In.kr(bus);
+				Out.kr(bus, sig * Line.kr(1, 0, 5, doneAction: 2));
 			});
-			EnvGen.kr(Env.perc(1), doneAction: 2);
 		}.play;
 		aFun = nil;
 	}
