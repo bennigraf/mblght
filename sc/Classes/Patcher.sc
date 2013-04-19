@@ -531,7 +531,7 @@ Patcher {
 						+ SinOsc.kr(0, distance.sum / 2 * pi + LFTri.kr(1/18.83), 0.4)
 							/ 3.6;
 				var color = Hsv2rgb.kr(sins.fold(0, 1), 1, 1).lag3(2);
-				Out.kr(bus, color) * Line.kr(0, 1, 5);
+				Out.kr(bus, color * Line.kr(0, 1, 5));
 			});
 			0;
 		}.play;
@@ -539,16 +539,20 @@ Patcher {
 	
 	// end vegas mode
 	enoughfun {
-		var black;
-		aFun.free;
-		black = {
-			var buses = this.busesForMethod(\color);
-			var color = [0, 0, 0];
-			buses.do({ |bus, n|
-				var sig = In.kr(bus);
-				Out.kr(bus, sig * Line.kr(1, 0, 5, doneAction: 2));
-			});
-		}.play;
-		aFun = nil;
+		Routine.run({
+			var black;
+			black = {
+				var buses = this.busesForMethod(\color);
+				var color = [0, 0, 0];
+				buses.do({ |bus, n|
+					var sig = In.kr(bus, 3);
+					ReplaceOut.kr(bus, sig * Line.kr(1, 0, 5, doneAction: 2));
+				});
+				0;
+			}.play(addAction: \addToTail);
+			4.wait;
+			aFun.free;
+			aFun = nil;
+		}, nil, AppClock);
 	}
 }
