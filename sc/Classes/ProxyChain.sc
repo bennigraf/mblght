@@ -18,7 +18,7 @@ ProxyChain {
 	}
 	
 	addPlayer { |patcher, group, method, channels, chansPerMethod|
-		this.add(\player, NodeProxy(server));
+		this.add(\player, NodeProxy.control(server, channels * chansPerMethod));
 		this.stickToBottom(\player);
 		this.at(\player).source = {
 			var in = \in.kr(0!(channels*chansPerMethod));
