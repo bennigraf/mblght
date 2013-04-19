@@ -23,10 +23,13 @@ ProxyChain {
 		this.at(\player).source = {
 			var in = \in.kr(0!(channels*chansPerMethod));
 			var buses;
+			if(patcher.isKindOf(Patcher).not, {
+				patcher = Patcher.all.at(patcher);
+			});
 			if(group.isNil, {
-				buses = Patcher.all.at(patcher).busesForMethod(method);
+				buses = patcher.busesForMethod(method);
 			}, {
-				buses = Patcher.all.at(patcher).busesForGroupMethod(group, method);
+				buses = patcher.busesForGroupMethod(group, method);
 			});
 			buses.do({|bus, i|
 				var offset = i * chansPerMethod;
