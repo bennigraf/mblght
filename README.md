@@ -10,7 +10,9 @@ Further information is available here: http://www.bennigraf.de/mblght/
 Documentation
 -------------
 
-...is really spare until now. In short: Install OLA/olad and get it running, use LGui.new() to do some basic setup tasks, find out the rest yourself. Or have fun with this little snippet:
+You find the documentation in german in the file mblght-Doku-pdf.pdf. English documentation isn't available yet unfortunately.
+
+In short: Install OLA/olad and get it running, use LGui.new() to do some basic setup tasks and start with this little snippet:
 
 	SynthDef(\test, {
 		var color = SinOsc.kr({0.4.rand}!3 + 0.1, pi.rand, mul: 0.5, add: 0.5);
@@ -19,7 +21,7 @@ Documentation
 		});
 	}).play;
 
-More documentation is hopefully to come, but until then you find more examples in /misc, /scenes and /waldstock.
+You can find more examples in /misc, /scenes and /waldstock.
 
 Examples
 --------
