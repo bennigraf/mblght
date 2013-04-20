@@ -188,6 +188,54 @@ OlaPipe {
 	}
 }
 
+
+OlaOsc {
+	/*
+	Device for DmxBuffer
+	Use Pipe to connect to olad and send data (using the .send method called by DmxBuffer)
+	*/
+	var pathToBin = "/usr/local/bin/ola_streaming_client";
+	var <universe = 0;
+	var net;
+	
+	
+	*new { | myUniverse = 0|
+		^super.new.init(myUniverse);
+	}
+	
+	init { | myUniverse = 0 |
+		universe = myUniverse;
+/*		pipe = Pipe(pathToBin ++ " -u " ++ universe, "w");*/
+		net = NetAddr.new("127.0.0.1", 7770)
+	}
+	close {
+		if(net.notNil, {
+/*			net.close;*/
+			net = nil;
+		});
+	}
+	
+	send { | buffer |
+		var data = Int8Array.newFrom(buffer - 128);
+		if(net.notNil, {
+			net.sendMsg('/dmx/universe', data);
+		});
+	}
+	
+	describe { 
+		// returns string that describes an instance of the object
+		var str = "Universe: "++universe;
+		^str;
+	}
+	
+	compileString {
+		var str = this.class.asCompileString++".new("++universe++")";
+		^str;
+	}
+}
+
+
+
 // connect to rainbowduinoboard with 8x8 rgb matrix on it running "firmwre_4bit"
 // (see DirectMode, Rainbowduino Dashboard, ...)
 RainbowSerial {
