@@ -216,7 +216,7 @@ OlaOsc {
 	}
 	
 	send { | buffer |
-		var data = Int8Array.newFrom(buffer - 128);
+		var data = Int8Array.newFrom(buffer);
 		if(net.notNil, {
 			net.sendMsg('/dmx/universe', data);
 		});
