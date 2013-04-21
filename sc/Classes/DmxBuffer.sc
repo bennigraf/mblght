@@ -218,7 +218,7 @@ OlaOsc {
 	send { | buffer |
 		var data = Int8Array.newFrom(buffer);
 		if(net.notNil, {
-			net.sendMsg('/dmx/universe', data);
+			net.sendMsg(("/dmx/universe/"++universe).asSymbol, data);
 		});
 	}
 	
