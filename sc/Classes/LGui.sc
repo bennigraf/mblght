@@ -2,32 +2,32 @@ LGui {
 	*new { |silent = false, loadSettings|
 		^super.new.init(silent, loadSettings);
 	}
-	
+
 	init { |silent = false, loadSettings|
 		LGui_Main(silent, loadSettings);
 	}
-	
+
 }
 
 
 LGui_Main {
-	
+
 	var <window;
 	var server;
 	var updateActions;
 	var settingsFile;
-	
+
 	// silent mode doesn't open any window but allows to load default settings
 	*new { |silent = false, loadSettings|
 		^super.new.init(silent, loadSettings);
 	}
-	
+
 	init { |silent = false, loadSettings|
 		server = Server.default;
 		updateActions = List();
 		settingsFile = Platform.userConfigDir+/+"LGuiConfig.scd";
 		this.checkForSettings;
-		
+
 		if(silent, {
 			if(loadSettings.notNil, {
 				this.loadSettings(loadSettings.asSymbol);
@@ -35,13 +35,15 @@ LGui_Main {
 				this.loadSettings(\default);
 			});
 		});
-		if(silent.not({ 
+		"LGUI?".postln;
+		if(silent.not, {
+			"LGUI!".postln;
 			window = Window.new("Lighting Controller", Rect(400, 400, 400, 400)).front;
 			this.makeDefaultWindow();
 			this.updateView();
-		}));
+		});
 	}
-	
+
 	checkForSettings {
 		var emptySettings;
 		if(File.exists(settingsFile).not, {
@@ -52,7 +54,7 @@ LGui_Main {
 			});
 		});
 	}
-	
+
 	makeDefaultWindow {
 		window.layout_(
 			VLayout(
@@ -62,21 +64,21 @@ LGui_Main {
 				)
 		);
 	}
-	
+
 	serverCheckView {
 		var view;
 		var string = "Server:";
 		var txt, btn1, btn2, updateAction;
 /*		var text = StaticText(view, 200@20).string_();*/
-		
+
 		if(server.pid.isNil, {
 			string = string + "Not running!";
 		}, {
 			string = string + "Running...";
 		});
-		
+
 		txt = StaticText(nil, 200@20).string_(string);
-		
+
 		btn1 = Button().states_([
 			["Boot Server", Color.black, Color.white],
 			["Stop Server", Color.black, Color.red] ])
@@ -112,21 +114,21 @@ LGui_Main {
 		};
 		updateAction.value();
 		updateActions.add(updateAction);
-		
+
 		view = HLayout(txt, btn1, btn2);
-		
+
 		^view;
 	}
-	
+
 	patcherView {
 		var view;
 		var hdln;
 		var ptchrbx, btns, addr, rmvr;
-		
+
 		// headline...
 		hdln = StaticText(nil, 200@20).string_("Patcher:")
 			.font_(Font.sansSerif(18, true));
-		
+
 		// box that lists all the active patchers
 		ptchrbx = ListView(nil, Rect(0, 0, 200, 200));
 		updateActions.add({
@@ -139,7 +141,7 @@ LGui_Main {
 				ptchrbx.items_(ptchrarr);
 			});
 		});
-		
+
 		// buttons for edit/manage devices/remove of patcher
 		rmvr = Button().states_([ ["Remove Patcher"] ])
 			.action_({
@@ -162,31 +164,31 @@ LGui_Main {
 			),
 			rmvr;
 		);
-		
+
 		// button: add patcher...
 		addr = Button().states_([ ["Add Patcher"] ])
 			.action_({
 				this.addPatcher;
 			});
-		
+
 		view = VLayout(
-			hdln, 
+			hdln,
 			HLayout(ptchrbx, btns),
 			addr
 		);
-		
+
 		^view;
 	}
-	
+
 	addPatcher {
 		var dialog;
 		var bounds = Window.availableBounds;
 		var addbtn, ptchrname;
-		
+
 		dialog = Window("Add Patcher", Rect(bounds.width/2-200, bounds.height/2+50, 400, 100));
-		
+
 		ptchrname = TextField();
-		
+
 		addbtn = Button().states_([["Create Patcher"]])
 			.action_({ |btn|
 				var patcher = Patcher.all();
@@ -205,7 +207,7 @@ LGui_Main {
 					this.updateView();
 				});
 			});
-		
+
 		dialog.layout_(VLayout(
 			HLayout(
 				StaticText().string_("Patcher name:"),
@@ -213,17 +215,17 @@ LGui_Main {
 			),
 			[addbtn, a:\topleft]
 		));
-		
+
 		dialog.front;
 	}
-	
+
 	theSaviour {
 		var view;
 		var slctr, ldbtn, svbtn;
 		var settingsObj, makeitems;
-		
+
 		slctr = PopUpMenu();
-		
+
 		makeitems = {
 			var items = [];
 			File.use(settingsFile, "r", { |f|
@@ -236,7 +238,7 @@ LGui_Main {
 			if(settingsObj[\default].notNil, {
 				this.loadSettings(\default);
 			});
-			
+
 /*			Archive.read("LGuiArchive.scd");
 			Archive.global.dictionary.keysValuesDo({ |name, obj|
 				items = items.add(name);
@@ -246,7 +248,7 @@ LGui_Main {
 		makeitems.value();
 
 /*		slctr.items_(["New..."]++makeitems.value());*/
-			
+
 		ldbtn = Button().states_([["Load"]])
 			.action_({
 				if(slctr.value > 0, {
@@ -254,7 +256,7 @@ LGui_Main {
 				})
 			});
 		svbtn = Button().states_([["Save"], ["Saving..."], ["Saved!", Color.black, Color.green]])
-			.action_({ 
+			.action_({
 				var name;
 				if(slctr.items.at(slctr.value) == "New...", {
 					LGuiDialog("Name new preset", { |dialog|
@@ -282,14 +284,14 @@ LGui_Main {
 					});
 				});
 			});
-		
+
 		view = VLayout(
 			StaticText().string_("Load/Save Setup").font_(Font.sansSerif(18, true)),
 			HLayout(
 				slctr, ldbtn, svbtn
 			)
 		);
-		
+
 		^view;
 	}
 	loadSettings { |name|
@@ -358,7 +360,7 @@ LGui_Main {
 /*		Patcher.all.at(\default).asCompileString*/
 		// as an event with .asCompileString:
 /*		(patcher: (name: \default, buffers: (['bufer1', 'buffer2']))).asCompileString*/
-		
+
 		var data = ();
 		var ptchrs = Patcher.all;
 		data.patchers = List();
@@ -367,7 +369,7 @@ LGui_Main {
 			var myTempDevices; //
 			// get patcher info:
 			myPatcher.name = patcherid;
-		
+
 			myPatcher.buffers = List();
 			patcher.buffers.do({ |buf, n|
 				var buffer = (classname: buf.class);
@@ -379,7 +381,7 @@ LGui_Main {
 				});
 				myPatcher.buffers.add(buffer);
 			});
-			
+
 			myPatcher.devices = List();
 			myTempDevices = Dictionary();
 			patcher.devices.do({ |dev, n|
@@ -387,7 +389,7 @@ LGui_Main {
 				myPatcher.devices.add(myDev);
 				myTempDevices.add(n -> dev);
 			});
-			
+
 			myPatcher.groups = List();
 			patcher.groups.keysValuesDo({ |grpname, devs|
 				var myGrp = (name: grpname, deviceIndizes: List());
@@ -399,7 +401,7 @@ LGui_Main {
 				});
 				myPatcher.groups.add(myGrp);
 			});
-		
+
 			data.patchers.add(myPatcher);
 		});
 		^data;
@@ -407,43 +409,43 @@ LGui_Main {
 	saveString {
 		^this.saveObject.asCompileString;
 	}
-	
+
 	updateView {
 		// actions to update the view...
 		updateActions.do({ |ua|
 			ua.value();
 		});
 	}
-	
+
 /*	Window.availableBounds*/
 
 }
 
 
 LGui_SetupPatcher {
-	
+
 	var window;
 	var updateActions;
 	var patcher;
-	
+
 	*new { |patcherid|
 		^super.new.init(patcherid);
 	}
-	
+
 	init { |patcherid|
 		updateActions = List();
 		patcher = Patcher.all.at(patcherid);
 		this.setupPatcher();
 		this.updateView();
 	}
-	
+
 	setupPatcher { |patcherid|
 		var bfrslst, devslst;
 		var addBfrBtn, rmvBfrBtn;
 		var devslctr, addDevBtn, rmvDevBtn;
-		
+
 		window = Window("Setup Patcher" + patcher.id);
-		
+
 		bfrslst = ListView()
 			.action_({ this.updateView() });
 		updateActions.add({
@@ -457,9 +459,9 @@ LGui_SetupPatcher {
 				});
 			});
 		});
-		
+
 		addBfrBtn = Button().states_([["Add Buffer"]])
-			.action_({ 
+			.action_({
 				this.addBufferToPatcher(patcher);
 				this.updateView();
 			});
@@ -471,7 +473,7 @@ LGui_SetupPatcher {
 					this.updateView();
 				});
 			});
-		
+
 		devslst = ListView();
 		updateActions.add({
 			if(bfrslst.value().notNil, {
@@ -503,7 +505,7 @@ LGui_SetupPatcher {
 				var devIndex = devslst.value();
 				this.removeDeviceFromBuffer(devIndex, buffer);
 			});
-		
+
 		window.layout = VLayout(
 			StaticText().string_("Buffers:").font_(Font.sansSerif(18, true)),
 			bfrslst,
@@ -513,7 +515,7 @@ LGui_SetupPatcher {
 			[devslctr, a:\left],
 			HLayout(addDevBtn, rmvDevBtn)
 		);
-		
+
 		window.front;
 	}
 	addBufferToPatcher { |patcher|
@@ -524,7 +526,7 @@ LGui_SetupPatcher {
 /*		var bufkey = patcher.buffers.find([buffer]);*/
 		patcher.removeBuffer(index);
 	}
-	
+
 	addDeviceToBuffer{ |devclass, buffer|
 		var theclass = devclass.asSymbol.asClass;
 		if(theclass.class.methods[0].argNames.size > 1, {
@@ -538,13 +540,13 @@ LGui_SetupPatcher {
 	devOptionsWindow { |devclass, buffer|
 		var lilwin, argpairs, argpairlayout, addbtn;
 		var bounds = Window.availableBounds;
-		
+
 		lilwin = Window("Arguments for" + devclass.asString, Rect(bounds.width/2-150, bounds.height/2+100, 300, 200));
 		lilwin.layout = VLayout();
 		lilwin.layout.add(
 			StaticText().string_("Arguments needed for"+devclass.asString)
 			.font_(Font.sansSerif(18, true)), align:\topLeft);
-			
+
 		argpairs = [];
 		devclass.class.methods[0].argNames.do({ |anarg|
 			if(anarg != \this, {
@@ -557,7 +559,7 @@ LGui_SetupPatcher {
 				anarg[1]
 			), align:\top);
 		});
-		
+
 		addbtn = Button().states_([["Add Device to Buffer"]])
 			.action_({
 				var newclass = devclass.asString ++ ".new(";
@@ -574,7 +576,7 @@ LGui_SetupPatcher {
 				lilwin.close;
 				this.updateView();
 			});
-		
+
 		lilwin.layout.add(addbtn);
 		lilwin.front;
 	}
@@ -582,45 +584,45 @@ LGui_SetupPatcher {
 		buffer.removeDevice(devIndex);
 		this.updateView();
 	}
-	
+
 	updateView {
 		// actions to update the view...
 		updateActions.do({ |ua|
 			ua.value();
 		});
 	}
-	
+
 }
 
 LGui_manageDevices {
-	
+
 	var window;
 	var updateActions;
 	var patcher;
-	
+
 	*new { |patcherid|
 		^super.new.init(patcherid);
 	}
-	
+
 	init { |patcherid|
 		updateActions = List();
 		patcher = Patcher.all.at(patcherid);
 		this.manageDevices();
 		this.updateView();
 	}
-	
+
 	manageDevices {
 		var window;
 		var bounds = Window.availableBounds;
-		
+
 		var grpslist, grpAdd, grpRmv;
-		
+
 		var devslist;
 		var devslctr;
 		var addrTxt, autoAddr, addBtn, rmvDevGrp, rmvBtn;
-		
+
 		window = Window("Manage Devices", Rect(bounds.width/2-200, bounds.height/2+50, 400, 400));
-		
+
 		grpslist = ListView().selectionMode_(\extended)
 			.action_({ |list|
 				this.updateView;
@@ -632,13 +634,13 @@ LGui_manageDevices {
 		grpAdd = Button().states_([["Add Group"]])
 			.action_({ this.addGroup });
 		grpRmv = Button().states_([["Remove Group"]])
-			.action_({ 
+			.action_({
 				if(grpslist.value.notNil && (grpslist.value > 0), {
 					patcher.removeGroup(patcher.groupNames.at(grpslist.value - 1));
 				});
 				this.updateView();
 			});
-		
+
 		devslist = ListView();
 		updateActions.add({
 			var items = [];
@@ -654,11 +656,11 @@ LGui_manageDevices {
 			});
 			devslist.items_(items);
 		});
-		
+
 		devslctr = PopUpMenu()
 			.items_(Device.typeNames().collect({ |name| name.asString+"("++Device.types.at(name).channels++"ch)" }))
 			.action_({this.updateView});
-		
+
 		addrTxt = TextField();
 		updateActions.add({
 			if(autoAddr.value, {
@@ -692,7 +694,7 @@ LGui_manageDevices {
 					group = grpslist.items[grpslist.value];
 				}, {
 					devices = patcher.devices;
-				});	
+				});
 				device = devices[devslist.value];
 				patcher.devices.do({ |dev, n|
 					if(dev == device, { devIndx = n });
@@ -718,14 +720,14 @@ LGui_manageDevices {
 		);
 		window.front;
 	}
-	
+
 	addGroup {
 		var dialog;
 		var bounds = Window.availableBounds;
 		var addbtn, grpname;
 
 		dialog = Window("Add Patcher", Rect(bounds.width/2-200, bounds.height/2+50, 400, 100));
-		
+
 		LGuiDialog("Add Group", {|dialog|
 			var grpname, addbtn;
 			grpname = TextField();
@@ -768,16 +770,16 @@ LGui_manageDevices {
 
 LGuiDialog {
 	var window;
-	
+
 	*new { |title, fn|
 		^super.new.init(title, fn);
 	}
-	
+
 	init { |title, fn|
 		var bounds = Window.availableBounds;
 		window = Window(title, Rect(bounds.width/2-100, bounds.height/2+50, 200, 100));
 		fn.value(window);
 		window.front;
 	}
-	
+
 }
