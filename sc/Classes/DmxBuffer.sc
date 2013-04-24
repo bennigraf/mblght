@@ -20,7 +20,7 @@ DmxBuffer {
 	classvar <knownDevices;
 	
 	*initClass {
-		knownDevices = [OlaPipe, RainbowSerial];
+		knownDevices = [OlaPipe, RainbowSerial, OlaOsc];
 	}
 	
 	*new {

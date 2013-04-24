@@ -183,17 +183,13 @@ Patcher {
 		var routine = Routine.run({
 			var val, lastval;
 			inf.do({
-				var changed = false;
 				buses.keysValuesDo({ |method, bus|
 					val = bus.getnSynchronous;
 					if(val != lastval, {
 						device.action(method, val);
-						changed = true;
+						this.setBuffers(device.getDmx, device.address);
 					});
 					lastval = val;
-				});
-				if(changed, {
-					this.setBuffers(device.getDmx, device.address);
 				});
 				(1/fps).wait;
 			});
