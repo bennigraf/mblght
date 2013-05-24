@@ -242,11 +242,11 @@ RainbowSerial {
 	var sp; // holds serialport
 	var lasttime; // to limit stuff to 20 fps to avoid overloading serial connection
 	
-	*new { |device|
-		^super.new.init(device);
+	*new { |device, bauds = 28800|
+		^super.new.init(device, bauds);
 	}
 	
-	init { |device|
+	init { |device, bauds|
 		if(device.isNil, {
 			"select one of the following serial ports and give number".postln;
 			SerialPort.devices.postln;
@@ -257,7 +257,7 @@ RainbowSerial {
 			^false;
 		});
 		("opening Port "++SerialPort.devices[device]).postln;
-		sp = SerialPort(device, baudrate: 28800, crtscts: true);
+		sp = SerialPort(device, baudrate: bauds, crtscts: true);
 		lasttime = 0;
 	}
 	close {
@@ -297,7 +297,7 @@ RainbowSerial {
 		// finally, put to port...
 		if(sp.notNil, {
 			// make sure we don't overload the serial connection and limit stuff to 20 fps for now
-			if(thisThread.seconds - lasttime > (1/15), {
+			if(thisThread.seconds - lasttime > (1/20), {
 				lasttime = thisThread.seconds;
 				sp.putAll(realOutData);
 			});
