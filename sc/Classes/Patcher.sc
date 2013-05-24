@@ -106,6 +106,9 @@ Patcher {
 		if((default == this) && (all.size > 0), {
 			default = all[all.keys.asArray.at(0)];
 		});
+		if((default == this) && (all.size == 0), {
+			default = nil;
+		});
 	}
 	
 	addBuffer { |buffer|

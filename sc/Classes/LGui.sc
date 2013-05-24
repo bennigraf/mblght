@@ -305,6 +305,7 @@ LGui_Main {
 				ptchr.end;
 			});
 			server.waitForBoot({
+				server.sync;
 				this.applySettings(settings[name.asSymbol]);
 /*				this.applySettings(Archive.global[name.asSymbol]);*/
 				this.updateView;
@@ -326,7 +327,7 @@ LGui_Main {
 				patcher.addBuffer(instance);
 			});
 			ptchr.devices.do({ |dev|
-				patcher.addDevice(Device.new(dev.type.asSymbol, dev.address););
+				patcher.addDevice(Device.new(dev.type.asSymbol, dev.address));
 			});
 			ptchr.groups.do({ |grp|
 				patcher.addGroup(grp.name);
