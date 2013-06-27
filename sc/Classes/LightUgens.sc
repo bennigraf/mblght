@@ -25,6 +25,20 @@ Hsv2rgb : UGen {
     }
 }
 
+Cmyk2rgb : UGen {
+/*    *ar { arg freq = 440.0, iphase = 0.0;
+        ^this.multiNew('audio', freq, iphase)
+    }*/
+    *kr { arg c = 0.0, m = 0.0, y = 0.0, k = 0.0;
+		var rgb = DC.kr!3;
+		// after "http://www.rapidtables.com/convert/color/cmyk-to-rgb.htm"
+		rgb[0] = (1-c) * (1-k);
+		rgb[1] = (1-m) * (1-k);
+		rgb[2] = (1-y) * (1-k);
+		
+		^rgb;
+    }
+}
 
 
 Rotator : UGen {
