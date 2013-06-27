@@ -249,10 +249,16 @@ LGui_Main {
 
 /*		slctr.items_(["New..."]++makeitems.value());*/
 
-		ldbtn = Button().states_([["Load"]])
+		ldbtn = Button().states_([["Load"], ["Loaded!", Color.black, Color.green]])
 			.action_({
 				if(slctr.value > 0, {
 					this.loadSettings(slctr.items[slctr.value]);
+					Routine.run({
+						2.do({
+							defer{ldbtn.value = 1};	0.1.wait;
+							defer{ldbtn.value = 0};	0.1.wait;
+						});
+					});
 				})
 			});
 		svbtn = Button().states_([["Save"], ["Saving..."], ["Saved!", Color.black, Color.green]])
