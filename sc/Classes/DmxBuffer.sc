@@ -20,7 +20,7 @@ DmxBuffer {
 	classvar <knownDevices;
 	
 	*initClass {
-		knownDevices = [OlaPipe, RainbowSerial, OlaOsc];
+		knownDevices = [OlaPipe, RainbowSerial, OlaOsc, GenOsc];
 	}
 	
 	*new {
@@ -192,9 +192,8 @@ OlaPipe {
 OlaOsc {
 	/*
 	Device for DmxBuffer
-	Use Pipe to connect to olad and send data (using the .send method called by DmxBuffer)
+	Send to OLA using the newly adapted OSC option
 	*/
-	var pathToBin = "/usr/local/bin/ola_streaming_client";
 	var <universe = 0;
 	var net;
 	
@@ -205,7 +204,6 @@ OlaOsc {
 	
 	init { | myUniverse = 0 |
 		universe = myUniverse;
-/*		pipe = Pipe(pathToBin ++ " -u " ++ universe, "w");*/
 		net = NetAddr.new("127.0.0.1", 7770)
 	}
 	close {
@@ -230,6 +228,60 @@ OlaOsc {
 	
 	compileString {
 		var str = this.class.asCompileString++".new("++universe++")";
+		^str;
+	}
+}
+
+
+
+GenOsc {
+	/*
+	Device for DmxBuffer
+	Generic OSC interface, kind of...
+	TODO: set ip-address, maybe as string like 127.0.0.1:12345/dmx/universe or so...
+	*/
+	var <path = '/dmx';
+	var <port = 13335;
+	var net;
+	
+	
+	*new { | myPath = nil, myPort = nil|
+		^super.new.init(myPath, myPort);
+	}
+	
+	init { | myPath, myPort|
+		if(myPath.isNil, {
+			myPath = '/dmx';
+		});
+		if(myPort.isNil, {
+			myPort = 13335
+		});
+		path = myPath;
+		port = myPort;
+		net = NetAddr.new("127.0.0.1", port)
+	}
+	close {
+		if(net.notNil, {
+/*			net.close;*/
+			net = nil;
+		});
+	}
+	
+	send { | buffer |
+		var data = Int8Array.newFrom(buffer);
+		if(net.notNil, {
+			net.sendMsg(path.asSymbol, data);
+		});
+	}
+	
+	describe { 
+		// returns string that describes an instance of the object
+		var str = "Path: "++path++", Port: "++port;
+		^str;
+	}
+	
+	compileString {
+		var str = this.class.asCompileString++".new('"++path++"', "++port++")";
 		^str;
 	}
 }
