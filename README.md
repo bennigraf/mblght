@@ -26,6 +26,11 @@ You can find more examples in /misc, /scenes and /waldstock.
 Examples
 --------
 
+A couple of videos have been made where mblght was put to good use!
+https://vimeo.com/57644362 -- at the Waldstock Festival in Bad Waldsee, used for stage & ambient lighting
+https://vimeo.com/70421823 -- at the SoNaFe in Ulm, used for ambient lighting
+https://vimeo.com/51610988 -- more simple test run in a barn
+
 Some colorful pictures (it's about the lighting, not the projection, which was part of the Stereo Tam Tam gig):
 https://www.facebook.com/media/set/?set=a.399699220085179.103947.172943649427405&type=1
 
