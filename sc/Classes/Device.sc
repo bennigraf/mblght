@@ -123,6 +123,23 @@ Device {
 				self.setDmx(4, (args[0] * 255).round.asInteger);
 			}
 		));
+		Device.addType(\waldfuck2, (
+			channels: 7,
+			// dim, strobe, r, g, b, w, chaser, chaser2
+			numArgs: (color: 3),
+			color: { |self, args|
+				// return list with dmx slots/addresses (starting from 0 for this device) and values
+				self.setDmx(2, (args[0] * 255).round.asInteger);
+				self.setDmx(3, (args[1] * 255).round.asInteger);
+				self.setDmx(4, (args[2] * 255).round.asInteger);
+			},
+			init: { |self|
+				self.setDmx(0, 255); // dimmer
+				self.setDmx(1, 0); // strobe
+				self.setDmx(5, 0); // w
+				self.setDmx(6, 0); // chaser
+			}
+		));
 		Device.addType(\waldfuck, (
 			channels: 6,
 			numArgs: (color: 3),

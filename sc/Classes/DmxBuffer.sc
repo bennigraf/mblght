@@ -1,46 +1,46 @@
 
 /*
-	DmxBuffer: Holds one Universe of Dmx data and sends it to various output devices, including Ola (pipe) 
+	DmxBuffer: Holds one Universe of Dmx data and sends it to various output devices, including Ola (pipe)
 	or Rainbowduino
-	
+
 	  buffer: buffers dmx data (512 channels of 8bit values)
 	  devices: list of output devices. Object with .send method that receives complete universe...
 */
 DmxBuffer {
-	
+
 	// some change...
-	
+
 	// instance vars
 	var buffer;
 	var <devices;
 	var runner;
-	
+
 	var <>fps = 60; // fps to aim for
-	
+
 	classvar <knownDevices;
-	
+
 	*initClass {
-		knownDevices = [OlaPipe, RainbowSerial, OlaOsc, GenOsc];
+		knownDevices = [OlaPipe, RainbowSerial, OlaOsc, GenOsc, OscNoBlob];
 	}
-	
+
 	*new {
 		^super.new.init();
 	}
-	
+
 	init {
 		buffer = List.newClear(513).fill(0);
 		devices = List();
 		runner = this.makeRunner;
 		runner.play;
 	}
-	
+
 	close {
 		devices.size.do({
 			devices.pop.close;
 		});
 		runner.stop();
 	}
-	
+
 	addDevice { |device|
 		devices.add(device);
 	}
@@ -50,12 +50,12 @@ DmxBuffer {
 			devices.removeAt(index);
 		})
 	}
-	
+
 	makeRunner {
 		var routine = Routine({
 			var time = thisThread.seconds;
 			var newtime;
-			
+
 			// closure: count hits, give fps each /delta/ seconds
 			var calcfps = { |delta = 5|
 				var hits = 0;
@@ -75,7 +75,7 @@ DmxBuffer {
 				};
 				getfps;
 			}.value();
-			
+
 			// main loop, send data to every device, wait a little to not lock up sc
 			inf.do{ |i|
 				calcfps.value();
@@ -95,7 +95,7 @@ DmxBuffer {
 		});
 		^routine;
 	}
-	
+
 	set { |arg1 = nil, arg2 = nil|
 		/// CHANGED: Offset for DMX where those idiots start to count from 1 instead of 0
 		// 3 types:
@@ -104,12 +104,12 @@ DmxBuffer {
 		// c) set(list, offset)
 /*		"getting some data into buffer".postln;*/
 /*		[arg1, arg2].postln;*/
-		
+
 		// a) set value at specific channel
 		if(arg1.isKindOf(Integer) && arg2.isKindOf(Integer), {
 			buffer[arg1] = arg2;
 		});
-		
+
 		// b) + c) set list of values (optionally with offset)
 		if(arg1.isKindOf(List), {
 			var offset = 0;
@@ -122,7 +122,7 @@ DmxBuffer {
 			});
 		})
 	}
-	
+
 	get { |channel = nil|
 		if(channel.notNil, {
 			^buffer[channel];
@@ -142,12 +142,12 @@ OlaPipe {
 	var pathToBin = "/usr/local/bin/ola_streaming_client";
 	var <universe = 0;
 	var pipe;
-	
-	
+
+
 	*new { | myUniverse = 0|
 		^super.new.init(myUniverse);
 	}
-	
+
 	init { | myUniverse = 0 |
 		universe = myUniverse;
 		pipe = Pipe(pathToBin ++ " -u " ++ universe, "w");
@@ -158,10 +158,10 @@ OlaPipe {
 			pipe = nil;
 		});
 	}
-	
+
 	send { | buffer |
 		var datastring = "";
-		buffer.do({ |obj, i| 
+		buffer.do({ |obj, i|
 			datastring = datastring ++ obj.asString;
 			if(i < (buffer.size - 1), {
 				datastring = datastring ++ ",";
@@ -175,13 +175,13 @@ OlaPipe {
 			"no pipe!".postln;
 		});
 	}
-	
-	describe { 
+
+	describe {
 		// returns string that describes an instance of the object
 		var str = "Universe: "++universe;
 		^str;
 	}
-	
+
 	compileString {
 		var str = this.class.asCompileString++".new("++universe++")";
 		^str;
@@ -196,12 +196,12 @@ OlaOsc {
 	*/
 	var <universe = 0;
 	var net;
-	
-	
+
+
 	*new { | myUniverse = 0|
 		^super.new.init(myUniverse);
 	}
-	
+
 	init { | myUniverse = 0 |
 		universe = myUniverse;
 		net = NetAddr.new("127.0.0.1", 7770)
@@ -212,20 +212,20 @@ OlaOsc {
 			net = nil;
 		});
 	}
-	
+
 	send { | buffer |
 		var data = Int8Array.newFrom(buffer);
 		if(net.notNil, {
 			net.sendMsg(("/dmx/universe/"++universe).asSymbol, data);
 		});
 	}
-	
-	describe { 
+
+	describe {
 		// returns string that describes an instance of the object
 		var str = "Universe: "++universe;
 		^str;
 	}
-	
+
 	compileString {
 		var str = this.class.asCompileString++".new("++universe++")";
 		^str;
@@ -243,12 +243,12 @@ GenOsc {
 	var <path = '/dmx';
 	var <port = 13335;
 	var net;
-	
-	
+
+
 	*new { | myPath = nil, myPort = nil|
 		^super.new.init(myPath, myPort);
 	}
-	
+
 	init { | myPath, myPort|
 		if(myPath.isNil, {
 			myPath = '/dmx';
@@ -266,20 +266,72 @@ GenOsc {
 			net = nil;
 		});
 	}
-	
+
 	send { | buffer |
 		var data = Int8Array.newFrom(buffer);
 		if(net.notNil, {
 			net.sendMsg(path.asSymbol, data);
 		});
 	}
-	
-	describe { 
+
+	describe {
 		// returns string that describes an instance of the object
 		var str = "Path: "++path++", Port: "++port;
 		^str;
 	}
-	
+
+	compileString {
+		var str = this.class.asCompileString++".new('"++path++"', "++port++")";
+		^str;
+	}
+}
+
+OscNoBlob {
+	/*
+	Device for DmxBuffer
+	Generic OSC interface, but send values as integers, not as big blob (slower but libcinder wants that)
+	TODO: set ip-address, maybe as string like 127.0.0.1:12345/dmx/universe or so...
+	*/
+	var <path = '/dmx';
+	var <port = 13335;
+	var net;
+
+
+	*new { | myPath = nil, myPort = nil|
+		^super.new.init(myPath, myPort);
+	}
+
+	init { | myPath, myPort|
+		if(myPath.isNil, {
+			myPath = '/dmx';
+		});
+		if(myPort.isNil, {
+			myPort = 13335
+		});
+		path = myPath;
+		port = myPort;
+		net = NetAddr.new("127.0.0.1", port)
+	}
+	close {
+		if(net.notNil, {
+/*			net.close;*/
+			net = nil;
+		});
+	}
+
+	send { | buffer |
+		// var data = Int8Array.newFrom(buffer);
+		if(net.notNil, {
+			net.sendMsg(path.asSymbol, *buffer.keep(512)); // * unpacks data to avoid sending a blob
+		});
+	}
+
+	describe {
+		// returns string that describes an instance of the object
+		var str = "Path: "++path++", Port: "++port;
+		^str;
+	}
+
 	compileString {
 		var str = this.class.asCompileString++".new('"++path++"', "++port++")";
 		^str;
@@ -288,16 +340,21 @@ GenOsc {
 
 
 
+
+
+
+
+
 // connect to rainbowduinoboard with 8x8 rgb matrix on it running "firmwre_4bit"
 // (see DirectMode, Rainbowduino Dashboard, ...)
 RainbowSerial {
 	var sp; // holds serialport
 	var lasttime; // to limit stuff to 20 fps to avoid overloading serial connection
-	
+
 	*new { |device, bauds = 28800|
 		^super.new.init(device, bauds);
 	}
-	
+
 	init { |device, bauds|
 		if(device.isNil, {
 			"select one of the following serial ports and give number".postln;
@@ -315,21 +372,21 @@ RainbowSerial {
 	close {
 		sp.close;
 	}
-	
-	send { |buffer|		
+
+	send { |buffer|
 		var fbuf = Array.fill(192, 0); // buffer data here to convert to 8bit...
 		var outData = Array.fill(192, 0);
 		var realOutData = Int8Array.newClear(96);
 		var byte1, byte2;
 		var index = 0; // needed as manual counter...
-		
+
 		buffer.do({ |obj, i|
 			if(i < 192, {
 				fbuf[i] = obj;
 			});
 		});
-		
-		// considering buffer is filled with sequential rgb values for each 'lamp', we need to 
+
+		// considering buffer is filled with sequential rgb values for each 'lamp', we need to
 		// convert this to the buffer format used in rainbow: bbbb..gggg..rrrr..
 		3.do({ |i|
 			64.do({|j|
@@ -337,15 +394,15 @@ RainbowSerial {
 				index = index+1;
 			});
 		});
-		
+
 		// now we need to convert 8bit data to 2x4bit data
 		96.do({ |i|
 			byte1 = (outData[i*2].abs / 16).floor.asInteger << 4; // msb
 			byte2 = (outData[i*2+1].abs / 16).floor.asInteger; // lsb
 			realOutData[i] = (byte1 | byte2); // whew, that blew my mind...
 		});
-		
-		
+
+
 		// finally, put to port...
 		if(sp.notNil, {
 			// make sure we don't overload the serial connection and limit stuff to 20 fps for now
@@ -354,12 +411,12 @@ RainbowSerial {
 				sp.putAll(realOutData);
 			});
 		});
-		
+
 	}
 
 	compileString {
 		var str = this.class.asCompileString++".new(0)";
 		^str;
 	}
-	
+
 }
