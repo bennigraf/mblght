@@ -119,8 +119,8 @@ Patcher {
 /*		"trying to set data to buffers:".postln;*/
 /*		[dmxData, addr].postln;*/
 		buffers.do({ |buf|
-			buf.set(dmxData, addr);
-/*			buf.set(dmxData, addr - 1); // dmx starts at 1, everything else in the world at 0*/
+/*			buf.set(dmxData, addr);*/
+			buf.set(dmxData, addr - 1); // dmx starts at 1, everything else in the world at 0
 		});
 	}
 	removeBuffer { |index|
