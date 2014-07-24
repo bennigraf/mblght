@@ -1,9 +1,10 @@
 
 /*
-	DmxBuffer: Holds one Universe of Dmx data and sends it to various output devices, including Ola (pipe)
+	DmxBuffer: Holds Dmx data and sends it to various output devices, including Ola (pipe)
 	or Rainbowduino
+	A device usually is a dmx universe (512 channels), the buffer can hold more than that!
 
-	  buffer: buffers dmx data (512 channels of 8bit values)
+	  buffer: buffers dmx data (512 channels of 8bit values per universe)
 	  devices: list of output devices. Object with .send method that receives complete universe...
 */
 DmxBuffer {
@@ -14,22 +15,26 @@ DmxBuffer {
 	var buffer;
 	var <devices;
 	var runner;
+	var <numUniverses;
+	var universeList;
 
-	var <>fps = 60; // fps to aim for
-
+	var <>fps = 40; // fps to aim for
+	
 	classvar <knownDevices;
 
 	*initClass {
 		knownDevices = [OlaPipe, RainbowSerial, OlaOsc, GenOsc, OscNoBlob];
 	}
 
-	*new {
-		^super.new.init();
+	*new { | mNumUniverses = 1|
+		^super.new.init(mNumUniverses);
 	}
 
-	init {
-		buffer = List.newClear(513).fill(0);
+	init { | mNumUniverses = 1|
+		numUniverses = mNumUniverses;
+		buffer = List.newClear(512 * this.numUniverses).fill(0);
 		devices = List();
+		universeList = List();
 		runner = this.makeRunner;
 		runner.play;
 	}
@@ -41,16 +46,17 @@ DmxBuffer {
 		runner.stop();
 	}
 
-	addDevice { |device|
+	addDevice { |device, universe = 0|
 		devices.add(device);
+		universeList.add(universe);
 	}
 	removeDevice { |index|
 		if(devices[index].notNil, {
 			devices[index].close;
 			devices.removeAt(index);
-		})
+		});
 	}
-
+	
 	makeRunner {
 		var routine = Routine({
 			var time = thisThread.seconds;
@@ -80,8 +86,11 @@ DmxBuffer {
 			inf.do{ |i|
 				calcfps.value();
 				time = thisThread.seconds;
-				devices.do({|dev|
-					dev.send(buffer);
+				devices.do({|dev, i|
+					var u = universeList[i];
+					if(u + 1 * 512 - 1 < buffer.size, {
+						dev.send(buffer.copyRange(512 * u, 512 * (u + 1) - 1));
+					});
 				});
 				newtime = thisThread.seconds;
 				if(newtime - time < 0.1, {
@@ -107,7 +116,9 @@ DmxBuffer {
 
 		// a) set value at specific channel
 		if(arg1.isKindOf(Integer) && arg2.isKindOf(Integer), {
-			buffer[arg1] = arg2;
+			if(arg1 < buffer.size, {
+				buffer[arg1] = arg2;
+			});
 		});
 
 		// b) + c) set list of values (optionally with offset)
@@ -118,7 +129,9 @@ DmxBuffer {
 			});
 			arg1.do({ |val, i|
 /*				buffer[i + offset + 1] = val;*/
-				buffer[i + offset] = val;
+				if(i + offset < buffer.size, {
+					buffer[i + offset] = val;
+				});
 			});
 		})
 	}
