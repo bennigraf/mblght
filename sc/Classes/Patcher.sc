@@ -10,11 +10,11 @@
 			'/ring/3/color 33 127 244' (rgb) or
 			'/ebene/strobo [1|0]' or other special functions
 		that above doesn't work out. shit. new approach:
-		
+
 			'/patcherid/devices {n|type|all} {method} arg1 arg2 argn..'
 			'/patcherid/groups {group} {method} arg1 arg2 argn..' // same as "all"
 			'/patcherid/groups {group} {device n|type|all} {method} arg1 arg2 argn..'
-			
+
  */
 Patcher {
 	var <devices;
@@ -27,14 +27,14 @@ Patcher {
 	var <>fps; // fps to get data from busses with
 	classvar <default; // default (usually first) Patcher...
 	classvar <all; // holds all opened patchers for reference...
-	
+
 	var aFun; // some vegas mode...
-	
+
 	*initClass {
 		Class.initClassTree(Event);
-		
+
 		all = ();
-		
+
 		// default lighting event. Allows to play light Pattern style:
 		// Pbind(\type, \light, \method, \dim, \data, Pwhite(0.1, 0.9, 5), \dur, 1).play
 		Event.addEventType(\light, {
@@ -52,11 +52,11 @@ Patcher {
 			});
 		});
 	}
-	
-	*new { |id|
-		^super.new.init(id);
+
+	*new { |id, callback|
+		^super.new.init(id, callback);
 	}
-	init { |myid|
+	init { |myid, callback|
 /*		buffer = List.newClear(512).fill(0);*/
 		devices = List();
 		groups = IdentityDictionary();
@@ -64,19 +64,23 @@ Patcher {
 		busses = List();
 		server = Server.default;
 		fps = 60;
-		
+
 		if(default==nil, { // make this the default patcher if none is there...
 			default = this;
 		});
 		all.add(myid -> this);
-		
+
 		if(myid.isKindOf(Symbol).not, {
 			"ID must be a symbol!".postln;
 			^nil;
 		});
 		id = myid;
-		
-		server.waitForBoot();
+
+		if(callback.isNil.not, {
+			server.waitForBoot({ callback.() });
+		}, {
+			server.waitForBoot();
+		});
 		// deprecate osc functionality for now...
 		/*
 		oscfuncs = List();
@@ -87,12 +91,12 @@ Patcher {
 		oscfuncs.add(OSCFunc.newMatching({ |msg| this.groupsMsg(msg) }, '/'++myid++'/groups'));
 		*/
 	}
-	
+
 	// makes this patcher the default patcher
 	makeDefault {
 		default = this;
 	}
-	
+
 	end {
 		// frees buses, stop routines, remove devices?
 		devices.do({ |dev|
@@ -110,7 +114,7 @@ Patcher {
 			default = nil;
 		});
 	}
-	
+
 	addBuffer { |buffer|
 		// a buffer must react to the set method!
 		buffers.add(buffer);
@@ -127,40 +131,40 @@ Patcher {
 		buffers.at(index).close();
 		buffers.removeAt(index);
 	}
-	
+
 	addDevice { |myDevice, myGroup|
 		// add device to internal list of devices
-		// register OSC path/address/methods? Or pass methods to Device... better not, otherwise 
+		// register OSC path/address/methods? Or pass methods to Device... better not, otherwise
 		//   I have 5 methods for each device in memory... => call methods when device gets called!
-		
+
 		var deviceNum;
 		var device = (); // holds device to add later
 		var buses; // kr-buses used for data...
 		var routine; // update-routine which calls actions periodically
-		
+
 		buses = this.makeBussesForDevice(myDevice);
 		routine = this.makeRoutineForDevice(myDevice, buses);
-		
+
 		device[\device] = myDevice;
 		device[\buses] = buses;
 		device[\routine] = routine;
-		
+
 		devices.add(device);
 		deviceNum = devices.size - 1;
-		
+
 		if(myGroup.notNil, {
 			if(groups[myGroup].isNil, {
 				groups.put(myGroup, List());
 			});
 			groups[myGroup].add(device);
 		});
-		
+
 		// call init message as default...
 		if(myDevice.hasMethod(\init), {
 			myDevice.action(\init);
 			this.setBuffers(myDevice.getDmx, myDevice.address);
 		});
-		
+
 		// create busses for each method, get their data in a routine or something...
 	}
 	makeBussesForDevice { |myDevice|
@@ -199,7 +203,7 @@ Patcher {
 		});
 		^routine;
 	}
-	
+
 	removeDevice { |index|
 		groups.keysValuesDo({ |grpname, devices|
 			devices.do({ |dev, n|
@@ -212,7 +216,7 @@ Patcher {
 		this.freeBusesForDevice(devices[index]);
 		devices.removeAt(index);
 	}
-	
+
 	nextFreeAddr { |numChans = 1|
 		var chans = nil!512;
 		var freeChan = nil;
@@ -241,9 +245,9 @@ Patcher {
 		});
 		^freeChan;
 	}
-	
-	
-	groupNames { 
+
+
+	groupNames {
 		var names = [];
 		groups.keysValuesDo({ |name|
 			names = names.add(name)
@@ -270,7 +274,7 @@ Patcher {
 	removeDeviceFromGroup { |deviceIndx, group|
 		groups[group].removeAt(deviceIndx);
 	}
-	
+
 	numDevices { |group = nil|
 		if(group.isNil, {
 			^devices.size;
@@ -278,7 +282,7 @@ Patcher {
 			^groups[group].size;
 		});
 	}
-	
+
 	busesForMethod { |method, deviceList|
 		var buses = List();
 		if(deviceList.isNil, {
@@ -311,10 +315,10 @@ Patcher {
 		var deviceList = groups[group];
 		^this.numBusesForMethod(method, deviceList);
 	}
-	
-	
+
+
 	message { |msg|
-		// dispatches message, calls methods on devices, sends dmx data to buffer 
+		// dispatches message, calls methods on devices, sends dmx data to buffer
 		// possible message addresses:
 		//   group: /{patcher}/group {method} - call method on each device in group
 		//   group: /{patcher}/group {n} {method} - call method on {n}'th device in group
@@ -331,9 +335,9 @@ Patcher {
 		);
 		e = ()
 		e[\play].def.sourceCode
-		
+
 		Patcher.message(msg); => dispatch to group/device, call often!
-		
+
 		*/
 		if(msg[\group] != nil, {
 /*			"make group message".postln;*/
@@ -343,9 +347,9 @@ Patcher {
 /*			"make device message".postln;*/
 			this.devicesMsgEvent(msg);
 		});
-		
+
 	}
-	
+
 	devicesMsgEvent { |msg, deviceList = nil|
 		var deviceNums = msg[\device]; // can be array...
 		var method = msg[\method];
@@ -355,7 +359,7 @@ Patcher {
 		if(deviceList == nil, {
 			deviceList = devices;
 		});
-		
+
 		if(deviceNums == nil, {
 			// apply to all devices in patcher
 			deviceNums = (0..(deviceList.size-1))
@@ -383,7 +387,7 @@ Patcher {
 		var groupDevices = groups[group];
 		this.devicesMsgEvent(msg, groupDevices);
 	}
-	
+
 	// basically OSCFunc callbacks... get: msg, time, addr, and recvPort
 	// a little deprecated!
 	devicesMsg { |msg, time, addr, recvPort|
@@ -418,7 +422,7 @@ Patcher {
 			});
 		});
 	}
-	
+
 	groupsMsg {|msg, time, addr, recvPort|
 /*		msg.postln;*/
 		var group = msg[1];
@@ -435,40 +439,40 @@ Patcher {
 			});
 		});
 	}
-	
-	
+
+
 	// now a patcher gets NodeProxys registered for methods. Those NodeProxy should play out
 	// .kr signals, whose values are being used to call the registered methods on the certain
 	// device or group of devices.
 	// Since a method might require multiple arguments, multichannel busses are needed. There
-	// is no way of having actual groups of busses or something like that, so there must be 
-	// arguments * channels busses available (in case there are different values for different 
+	// is no way of having actual groups of busses or something like that, so there must be
+	// arguments * channels busses available (in case there are different values for different
 	// devices). The devices wrap around the available devices in any certain group.
-	
+
 	// Or: a patcher registers busses for methods. Then NodeProxys need to play to those busses.
 	// (A NodeProxy with Out.kr appareantly doesn't even create it's own private bus, see NP.busLoaded.)
 	// deprecated!!
 	makeBusForMethod { |method, numArgs = 1, group = nil, channels = 1|
-		
+
 		var bus = (); // bus proto...
 		var numDevices = this.numDevices(group);
 		// how do I get the number of arguments for a method??? I don't! => numArgs...
-		
+
 		if(server.pid == nil, {
 			"Boot server first!!".postln;
 			^false;
 		});
-		
+
 		if(group.notNil, {
 			bus[\group] = group;
 		});
-		
+
 		bus.numArgs = numArgs;
 		bus.channels = channels; // notice that bus.channels != bus.bus.numChannels, the latter is channels*numArgs!
 		bus.method = method;
-		
+
 		bus.bus = Bus.control(server, numArgs * channels);
-		
+
 		bus.routine = Routine.run({
 			var busdata;
 			var message = ();
@@ -478,14 +482,14 @@ Patcher {
 					message[\group] = group;
 				});
 				// wrap around things? hmmm...
-				// if there is 1 channel, call on any device. if there are >1 channels, call on 
-				// each device 
+				// if there is 1 channel, call on any device. if there are >1 channels, call on
+				// each device
 				if(bus.channels == 1, {
 					// bus contains only data for 1 channel so it also must be numArgs big...
 					message[\data] = bus.bus.getnSynchronous;
 /*					message.postln;*/
 					this.message(message);
-				}, {	
+				}, {
 					// for each device get data from bus (!offset!), wrap bus channels...
 					busdata = bus.bus.getnSynchronous; // .getnAt doesn't exist...
 					numDevices.do({ |i|
@@ -499,7 +503,7 @@ Patcher {
 				(1/fps).wait;
 			});
 		});
-		
+
 		// add bus to bus-dictionary
 		busses.add(bus);
 	}
@@ -512,8 +516,8 @@ Patcher {
 			("Nothing found at index "+index).postln;
 		});
 	}
-	
-	
+
+
 	havefun { |group = 'stage'|
 		"Fun".postln;
 		if(aFun.notNil, { aFun.free });
@@ -535,7 +539,7 @@ Patcher {
 			0;
 		}.play;
 	}
-	
+
 	// end vegas mode
 	enoughfun {
 		Routine.run({
