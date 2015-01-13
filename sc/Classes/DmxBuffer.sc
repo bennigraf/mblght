@@ -19,7 +19,7 @@ DmxBuffer {
 	var universeList;
 
 	var <>fps = 40; // fps to aim for
-	
+
 	classvar <knownDevices;
 
 	*initClass {
@@ -56,7 +56,7 @@ DmxBuffer {
 			devices.removeAt(index);
 		});
 	}
-	
+
 	makeRunner {
 		var routine = Routine({
 			var time = thisThread.seconds;

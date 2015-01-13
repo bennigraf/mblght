@@ -3,7 +3,7 @@
 	Provides methods to use devices without knowing their exact addresses...
 	holds it's own little buffer for it's own dmx data, accessible via setDmx, info gets called from patcher
  */
-Device {	
+Device {
 	classvar types; // holds different types of devices
 	var <>address = 0;
 	var <>type;
@@ -47,14 +47,14 @@ Device {
 				// set pan/tilt to where the camera should look to...
 				// args: aimx, aimy, aimz
 				var pans, tilts;
-				
+
 				// get current camera position:
 				var dmx = self.getDmx;
 				var xcam = dmx[0] / 255 + (dmx[1] / 255 / 255);
 				var ycam = dmx[2] / 255 + (dmx[3] / 255 / 255);
 				var zcam = dmx[4] / 255 + (dmx[5] / 255 / 255);
-				
-				// calculate stuff. 
+
+				// calculate stuff.
 				// 1. distance on x/z-plane using pythagoras
 				var d = ((xcam - args[0])**2 + ((zcam - args[2])**2)).sqrt;
 				// 2. "height"-difference (delta y)
@@ -73,10 +73,10 @@ Device {
 
 				pan = pan.wrap(0, 2pi);
 				tilt = tilt.wrap(0, 2pi);
-								
+
 				tilts = [(tilt/2pi * 255).floor, (tilt/2pi * 255 % 1 * 255).round];
 				pans = [(pan/2pi * 255).floor, (pan/2pi * 255 % 1 * 255).round];
-				
+
 				self.setDmx(6, pans[0]);
 				self.setDmx(7, pans[1]);
 				self.setDmx(8, tilts[0]);
@@ -89,7 +89,7 @@ Device {
 				self.setDmx(3, 0);
 				self.setDmx(4, 140);
 				self.setDmx(5, 0);
-				
+
 				self.setDmx(13, 20); // ambient light
 				self.setDmx(14, 128); // overall light?? alpha-value??
 				self.setDmx(15, 40); // "athmosphere" -> foggyness
@@ -188,7 +188,7 @@ Device {
 				// return list with dmx slots/addresses (starting from 0 for this device) and values
 				self.setDmx(0, (args[0] * 255).round.asInteger);
 			},
-			init: { |self| 
+			init: { |self|
 				self.setDmx(0, 255);
 				self.setDmx(1, 255); // set intens to fl
 			}
@@ -220,7 +220,7 @@ Device {
 				cmyk[0] = (1 - rgb[0] - cmyk[3]) / (1 - cmyk[3]);
 				cmyk[1] = (1 - rgb[1] - cmyk[3]) / (1 - cmyk[3]);
 				cmyk[2] = (1 - rgb[2] - cmyk[3]) / (1 - cmyk[3]);
-				
+
 				// set cmyk...
 				self.setDmx(8, (cmyk[0] * 255).round.asInteger);
 				self.setDmx(9, (cmyk[1] * 255).round.asInteger);
@@ -254,7 +254,7 @@ Device {
 				self.setDmx(4, 255);
 				// white/poweron/intensity:
 				self.setDmx(5, 255);
-				// zoom: 
+				// zoom:
 				self.setDmx(7, 255);
 			},
 			color: { |self, rgb|
@@ -307,15 +307,36 @@ Device {
 			color: { |self, rgb|
 				self.setDmx(0, (rgb[0] * 255).round.asInteger);
 				self.setDmx(1, (rgb[1] * 255).round.asInteger);
-				self.setDmx(2, (rgb[2] * 255).round.asInteger);	
+				self.setDmx(2, (rgb[2] * 255).round.asInteger);
 			},
 			strobe: { |self, strobe|
-				
+
 			}
-			
+
+		));
+
+		Device.addType(\fiveSpot, (
+			channels: 6,
+			numArgs: (colorw: 4, strobe: 1),
+			init: { |self|
+				self.setDmx(4, 255); // dimmer
+			},
+			colorw: { |self, rgbw|
+				self.setDmx(0, (rgbw[0] * 255).round.asInteger);
+				self.setDmx(1, (rgbw[1] * 255).round.asInteger);
+				self.setDmx(2, (rgbw[2] * 255).round.asInteger);
+				self.setDmx(3, (rgbw[3] * 255).round.asInteger);
+			},
+			strobe: { |self, strobe|
+				if(strobe[0] > 0, {
+					strobe[0] = strobe[0].linlin(0, 1, 11, 255).round.asInteger;
+				});
+				self.setDmx(5, strobe[0]);
+			}
+
 		));
 	}
-	
+
 	*new { |mytype, myaddress = 0|
 		^super.new.init(mytype, myaddress);
 	}
@@ -326,8 +347,8 @@ Device {
 		channels = types[type][\channels];
 		dmxData = List.newClear(channels).fill(0);
 	}
-	
-	*addType { |title, definition| 
+
+	*addType { |title, definition|
 		if(types.isNil, {
 			types = IdentityDictionary();
 		});
@@ -359,7 +380,7 @@ Device {
 		});
 		^myTypes;
 	}
-	
+
 	setDmx { |addr, value|
 		// set dmx data locally! use internal mini pseudo buffer
 		dmxData[addr] = value;
@@ -367,7 +388,7 @@ Device {
 	getDmx {
 		^dmxData;
 	}
-	
+
 	action { |method, arguments|
 		// get type definition wiht methods from global type dictionary stored in classvar types
 		var def = types.at(type);
@@ -378,7 +399,7 @@ Device {
 			("method "+method+" not found in "+type.asString+"!").postln;
 		});
 	}
-	
+
 	hasMethod { |method|
 		var def = types.at(type);
 		^def.at(method.asSymbol).notNil;

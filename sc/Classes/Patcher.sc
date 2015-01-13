@@ -191,6 +191,7 @@ Patcher {
 			var val, lastval;
 			inf.do({
 				buses.keysValuesDo({ |method, bus|
+					// btw: asynchronous access is way to slow as well...
 					val = bus.getnSynchronous;
 					if(val != lastval, {
 						device.action(method, val);
