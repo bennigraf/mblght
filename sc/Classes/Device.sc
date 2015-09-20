@@ -335,7 +335,101 @@ Device {
 			}
 
 		));
+
+		Device.addType(\platWashZFXProBasicMode, (
+			channels: 20,
+			numArgs: (color: 3, pos: 2),
+			init: { |self|
+				// pan/tilt center
+				self.setDmx(0, 127); self.setDmx(1, 127);
+				self.setDmx(2, 127); self.setDmx(3, 127);
+				// shutter open:
+				self.setDmx(8, 255);
+				// white/poweron/intensity:
+				self.setDmx(9, 255);
+				// zoom: narrowest...
+				self.setDmx(10, 0);
+			},
+			color: { |self, rgb|
+				self.setDmx(4, (rgb[0] * 255).round.asInteger);
+				self.setDmx(5, (rgb[1] * 255).round.asInteger);
+				self.setDmx(6, (rgb[2] * 255).round.asInteger);
+			},
+			pos: { |self, pos|
+				// pos is rotation/pan and tilt in coarse and fine values
+				self.setDmx(0, (pos[0] * 255).floor.asInteger); // coarse
+				self.setDmx(1, ((pos[0] % (1/255)) * 255 * 255).round.asInteger); // fine
+
+				self.setDmx(2, (pos[1] * 255).floor.asInteger);
+				self.setDmx(3, ((pos[1] % (1/255)) * 255 * 255).round.asInteger);
+			}
+		));
+
+		Device.addType(\smplrgbw, (
+			channels: 4,
+			numArgs: (color: 3),
+			color: { |self, args|
+				// rgbw: use white channel automatically...
+				var white;
+				// set white to the min value of all channels
+				white = (args.minItem * 255).round.asInteger;
+				self.setDmx(3, white);
+				// substract the white amount from the color channels
+				self.setDmx(0, (args[0] * 255).round.asInteger - white);
+				self.setDmx(1, (args[1] * 255).round.asInteger - white);
+				self.setDmx(2, (args[2] * 255).round.asInteger - white);
+			}
+		));
+
+		// showtec led light bar 8, needs some initiating (dimmer and strobe channel...)
+		Device.addType(\showtecLLB8init, (
+			channels: 26,
+			numArgs: (),
+			init: { |self|
+				// strobe channel off
+				self.setDmx(24, 0);
+				// dimmer channel full
+				self.setDmx(25, 255);
+			}
+		));
+
+		Device.addType(\lmaxxeasywash, (
+			channels: 12,
+			numArgs: (color: 3, pos: 2),
+			init: { |self|
+				// pan/tilt center
+				self.setDmx(0, 127); self.setDmx(1, 127);
+				self.setDmx(2, 127); self.setDmx(3, 127);
+				// pan/tilt speed fast
+				self.setDmx(4, 0);
+				// shutter open/dimmer full:
+				self.setDmx(5, 255);
+				// channels 10, 11, 12 are color, color speed and auto
+				// funny how it has 13 channels in 12 channel mode... duh
+			},
+			color: { |self, rgb| // rgbw, channels 6 7 8 9
+				// rgbw: use white channel automatically...
+				var white;
+				// set white to the min value of all channels
+				white = (rgb.minItem * 255).round.asInteger;
+				self.setDmx(9, white);
+				// substract the white amount from the color channels
+				self.setDmx(6, (rgb[0] * 255).round.asInteger - white);
+				self.setDmx(7, (rgb[1] * 255).round.asInteger - white);
+				self.setDmx(8, (rgb[2] * 255).round.asInteger - white);
+			},
+			pos: { |self, pos|
+				// pos is rotation/pan and tilt in coarse and fine values
+				self.setDmx(0, (pos[0] * 255).floor.asInteger); // coarse
+				self.setDmx(1, ((pos[0] % (1/255)) * 255 * 255).round.asInteger); // fine
+
+				self.setDmx(2, (pos[1] * 255).floor.asInteger);
+				self.setDmx(3, ((pos[1] % (1/255)) * 255 * 255).round.asInteger);
+			}
+		));
+
 	}
+
 
 	*new { |mytype, myaddress = 0|
 		^super.new.init(mytype, myaddress);
