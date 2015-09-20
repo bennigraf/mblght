@@ -12,7 +12,7 @@ DmxBuffer {
 	// some change...
 
 	// instance vars
-	var buffer;
+	var <buffer;
 	var <devices;
 	var runner;
 	var <numUniverses;
