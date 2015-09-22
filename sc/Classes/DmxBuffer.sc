@@ -245,6 +245,53 @@ OlaOsc {
 	}
 }
 
+MicroOla {
+	/*
+	Device for DmxBuffer
+	Send to OLA using the newly adapted OSC option
+	*/
+	var <universe = 0;
+	var net;
+	var chancount;
+
+	*new { | myUniverse = 0, myChancount = 16|
+		^super.new.init(myUniverse, myChancount);
+	}
+
+	init { | myUniverse = 0, myChancount = 16|
+		universe = myUniverse;
+		chancount = myChancount;
+
+		net = NetAddr.new("127.0.0.1", 7770)
+	}
+	close {
+		if(net.notNil, {
+/*			net.close;*/
+			net = nil;
+		});
+	}
+
+	send { | buffer |
+		var data = Int8Array.newFrom(buffer);
+		if(net.notNil, {
+			chancount.do({ |n|
+				net.sendMsg(("/dmx/universe/"++universe).asSymbol, n+1, buffer[n]);
+			});
+		});
+	}
+
+	describe {
+		// returns string that describes an instance of the object
+		var str = "Universe: "++universe++", channels: "++chancount;
+		^str;
+	}
+
+	compileString {
+		var str = this.class.asCompileString++".new("++universe++", "++chancount++")";
+		^str;
+	}
+}
+
 
 
 GenOsc {
