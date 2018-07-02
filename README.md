@@ -23,7 +23,7 @@ In short: Install OLA/olad and get it running, use LGui.new() to do some basic s
 		});
 	}).play;
 
-You can find more examples in /misc, /scenes and /waldstock.
+You can find more examples in /misc, /scenes and /waldstock. More exhaustive examples are available in the repository https://github.com/bennigraf/mblght-examples.
 
 Examples
 --------
