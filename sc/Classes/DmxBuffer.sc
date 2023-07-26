@@ -400,7 +400,48 @@ OscNoBlob {
 
 
 
+SmplSerial {
+	var port, lastUpdate;
 
+	*new { |device, bauds = 9600|
+		^super.new.init(device, bauds);
+	}
+
+	init { |device, bauds|
+		if(device.isNil, {
+			"select one of the following serial ports and give number".postln;
+			SerialPort.devices.postln;
+			^false;
+		});
+		("opening Port " ++ device).postln;
+		port = SerialPort.new(device, bauds);
+		port.isOpen.not.if({
+			"port didnt open!".postln;
+			^false;
+		});
+		lastUpdate = 0;
+	}
+	close {
+		port.close;
+	}
+
+	send { |buffer|
+		(thisThread.seconds - lastUpdate > (1/30) && port.isOpen).if({
+			// 250 seems to be the limit, I guess because of some serial buffer
+			var str = buffer.keep(250).join(",");
+
+			port.putAll(str ++ "\n");
+
+			// ("put data(" ++ port.isOpen ++ ", " ++buffer.size++"): " ++ str).postln;
+			lastUpdate = thisThread.seconds;
+		})
+	}
+
+	compileString {
+		var str = this.class.asCompileString++".new(0)";
+		^str;
+	}
+}
 
 
 
