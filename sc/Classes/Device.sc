@@ -338,7 +338,7 @@ Device {
 
 		Device.addType(\platWashZFXProBasicMode, (
 			channels: 20,
-			numArgs: (color: 3, pos: 2),
+			numArgs: (color: 3, pos: 2, zoom: 1),
 			init: { |self|
 				// pan/tilt center
 				self.setDmx(0, 127); self.setDmx(1, 127);
@@ -362,6 +362,11 @@ Device {
 
 				self.setDmx(2, (pos[1] * 255).floor.asInteger);
 				self.setDmx(3, ((pos[1] % (1/255)) * 255 * 255).round.asInteger);
+			},
+			zoom: { |self, zoom|
+				// self.setDmx(10, (zoom * 255).round.asInteger);
+				// zoom.postln;
+				self.setDmx(10, (zoom[0] * 255).round.asInteger);
 			}
 		));
 
@@ -426,6 +431,41 @@ Device {
 				self.setDmx(2, (pos[1] * 255).floor.asInteger);
 				self.setDmx(3, ((pos[1] % (1/255)) * 255 * 255).round.asInteger);
 			}
+		));
+
+		Device.addType(\lixmoving14, (
+			channels: 14,
+			numArgs: (color: 3, pos: 3),
+			init: { |self|
+				// pan/tilt center
+				self.setDmx(0, 127); self.setDmx(1, 127);
+				self.setDmx(2, 127); self.setDmx(3, 127);
+				// pan/tilt speed fast
+				self.setDmx(4, 0);
+				// shutter open/dimmer full:
+				self.setDmx(5, 255);
+			},
+			color: { |self, rgb| // rgbw, channels 7 8 9 10 (when starting at 1)
+				// rgbw: use white channel automatically...
+				var white;
+				// set white to the min value of all channels
+				white = (rgb.minItem * 255).round.asInteger;
+				self.setDmx(9, white);
+				// substract the white amount from the color channels
+				self.setDmx(6, (rgb[0] * 255).round.asInteger - white);
+				self.setDmx(7, (rgb[1] * 255).round.asInteger - white);
+				self.setDmx(8, (rgb[2] * 255).round.asInteger - white);
+			},
+			pos: { |self, pos|
+				// pos is rotation/pan and tilt in coarse and fine values + movement delay
+				self.setDmx(0, (pos[0] * 255).floor.asInteger); // coarse
+				self.setDmx(1, ((pos[0] % (1/255)) * 255 * 255).round.asInteger); // fine
+
+				self.setDmx(2, (pos[1] * 255).floor.asInteger);
+				self.setDmx(3, ((pos[1] % (1/255)) * 255 * 255).round.asInteger);
+
+				self.setDmx(4, (pos[2] * 255).floor.asInteger);
+			},
 		));
 
 	}
