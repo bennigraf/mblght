@@ -426,8 +426,9 @@ SmplSerial {
 	}
 
 	send { |buffer|
-		(thisThread.seconds - lastUpdate > (1/30) && port.isOpen).if({
-			// 250 seems to be the limit, I guess because of some serial buffer
+		//(thisThread.seconds - lastUpdate > (1/30) && port.isOpen).if({
+    port.isOpen.if({
+			// there seems to be a limit, I guess because of some serial buffer
 			var str = buffer.keep(100).join(",");
 
 			port.putAll(str ++ "\n");
