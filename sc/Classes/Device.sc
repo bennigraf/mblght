@@ -386,6 +386,25 @@ Device {
 			}
 		));
 
+		Device.addType(\rgbwpastell, (
+			channels: 4,
+			numArgs: (color: 3),
+			color: { |self, args|
+				// rgbw: use white channel automatically, but allow white to mix in in somehow
+				var r, g, b, white;
+				// set white to the min value of all channels
+				white = args.minItem;
+				r = args[0] - (white*0.75);
+				g = args[1] - (white*0.75);
+				b = args[2] - (white*0.8);
+				// substract the white amount from the color channels
+				self.setDmx(0, (r * 255).round.asInteger);
+				self.setDmx(1, (g * 255).round.asInteger);
+				self.setDmx(2, (b * 255).round.asInteger);
+				self.setDmx(3, (white * 255).round.asInteger);
+			}
+		));
+
 		// showtec led light bar 8, needs some initiating (dimmer and strobe channel...)
 		Device.addType(\showtecLLB8init, (
 			channels: 26,
