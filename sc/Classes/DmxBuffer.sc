@@ -300,16 +300,17 @@ GenOsc {
 	Generic OSC interface, kind of...
 	TODO: set ip-address, maybe as string like 127.0.0.1:12345/dmx/universe or so...
 	*/
+	var <addr = "127.0.0.1";
 	var <path = '/dmx';
 	var <port = 13335;
 	var net;
 
 
-	*new { | myPath = nil, myPort = nil|
-		^super.new.init(myPath, myPort);
+	*new { | myAddr = nil, myPath = nil, myPort = nil|
+		^super.new.init(myAddr, myPath, myPort);
 	}
 
-	init { | myPath, myPort|
+	init { | myAddr, myPath, myPort|
 		if(myPath.isNil, {
 			myPath = '/dmx';
 		});
@@ -318,7 +319,8 @@ GenOsc {
 		});
 		path = myPath;
 		port = myPort;
-		net = NetAddr.new("127.0.0.1", port)
+		addr = myAddr;
+		net = NetAddr.new(addr, port)
 	}
 	close {
 		if(net.notNil, {
