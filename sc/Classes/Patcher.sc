@@ -563,7 +563,7 @@ Patcher {
 
 			// main loop, send data to every device, wait a little to not lock up sc
 			inf.do{ |i|
-				// time = thisThread.seconds;
+				time = thisThread.seconds;
 
 				this.devices.do({ |dev, i|
 					dev.buses.keysValuesDo({ |method, bus|
@@ -588,15 +588,16 @@ Patcher {
 					device.device.send(this.universeBuffers[device.universe]);
 				});
 
-/*				newtime = thisThread.seconds;
-				if(newtime - time < 0.1, {
+				newtime = thisThread.seconds;
+				((1/fps) - (newtime - time)).wait;
+/*				if(newtime - time < 0.1, {
 					// wait difference to 1/fps seconds to aim for certain frame rate
 					((1/fps) - (newtime - time)).wait;
 				}, {
 					"frame rate problem!".postln;
 /*					(1/fps).wait;*/
 				});*/
-				(1/fps).wait;
+				// (1/fps).wait;
 			};
 		});
 		^routine;
