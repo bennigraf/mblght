@@ -209,14 +209,16 @@ OlaOsc {
 	*/
 	var <universe = 0;
 	var net;
+	var channelLimit = 512;
 
 
-	*new { | myUniverse = 0|
-		^super.new.init(myUniverse);
+	*new { | myUniverse = 0, myChanLimit = 512 |
+		^super.new.init(myUniverse, myChanLimit);
 	}
 
-	init { | myUniverse = 0 |
+	init { | myUniverse = 0, myChanLimit = 512 |
 		universe = myUniverse;
+		channelLimit = myChanLimit;
 		net = NetAddr.new("127.0.0.1", 7770)
 	}
 	close {
@@ -228,6 +230,9 @@ OlaOsc {
 
 	send { | buffer |
 		var data = Int8Array.newFrom(buffer);
+		if (channelLimit < 512, {
+			data = data.copyRange(0, channelLimit - 1);
+		});
 		if(net.notNil, {
 			net.sendMsg(("/dmx/universe/"++universe).asSymbol, data);
 		});
