@@ -163,14 +163,14 @@ Patcher {
 		var deviceNum;
 		var device = (); // holds device to add later
 		var buses; // kr-buses used for data...
-		// var routine; // update-routine which calls actions periodically
+		var routine; // update-routine which calls actions periodically
 
 		buses = this.makeBussesForDevice(myDevice);
-		// routine = this.makeRoutineForDevice(myDevice, buses);
+		routine = this.makeRoutineForDevice(myDevice, buses);
 
 		device[\device] = myDevice;
 		device[\buses] = buses;
-		// device[\routine] = routine;
+		device[\routine] = routine;
 
 		devices.add(device);
 		deviceNum = devices.size - 1;
@@ -216,7 +216,7 @@ Patcher {
 	}
 
 	// totally deprecated
-/*	makeRoutineForDevice { |device, buses|
+	makeRoutineForDevice { |device, buses|
 		var routine = Routine.run({
 			var val, lastval;
 			inf.do({
@@ -225,8 +225,7 @@ Patcher {
 					val = bus.getnSynchronous;
 					if(val != lastval, {
 						device.action(method, val);
-			"asdf 2".postln;
-						this.setBuffers(device.getDmx, device.address);
+						this.setUniverseBufferData(device.getDmx, device.universe, device.address);
 					});
 					lastval = val;
 				});
@@ -234,7 +233,7 @@ Patcher {
 			});
 		});
 		^routine;
-	}*/
+	}
 
 	removeDevice { |index|
 		groups.keysValuesDo({ |grpname, devices|
@@ -558,11 +557,11 @@ Patcher {
 			// main loop, send data to every device, wait a little to not lock up sc
 			inf.do{ |i|
 				time = thisThread.seconds;
-				this.devices.do({ |dev, i|
-					dev.buses.keysValuesDo({ |method, bus|
+				// this.devices.do({ |dev, i|
+				// dev.buses.keysValuesDo({ |method, bus|
 						// btw: asynchronous access is way to slow as well...
 
-						dev.device.action(method, bus.getnSynchronous);
+				// dev.device.action(method, bus.getnSynchronous);
 
 						// ToDo: Reimplement this "caching" thing below
 						/**
@@ -573,10 +572,10 @@ Patcher {
 						});
 						lastval = val;
 						**/
-					});
+		// });
 
-					this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
-				});
+				// this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
+		// });
 
 				this.outputDevices.do({ |device|
 					device.device.send(this.universeBuffers[device.universe]);
