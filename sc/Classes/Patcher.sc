@@ -166,7 +166,7 @@ Patcher {
 		var routine; // update-routine which calls actions periodically
 
 		buses = this.makeBussesForDevice(myDevice);
-		routine = this.makeRoutineForDevice(myDevice, buses);
+		// routine = this.makeRoutineForDevice(myDevice, buses);
 
 		device[\device] = myDevice;
 		device[\buses] = buses;
@@ -219,7 +219,10 @@ Patcher {
 	makeRoutineForDevice { |device, buses|
 		var routine = Routine.run({
 			var val, lastval;
+			var time, newtime;
 			inf.do({
+				time = thisThread.seconds;
+
 				buses.keysValuesDo({ |method, bus|
 					// btw: asynchronous access is way to slow as well...
 					val = bus.getnSynchronous;
@@ -229,7 +232,11 @@ Patcher {
 					});
 					lastval = val;
 				});
-				(1/fps).wait;
+
+				newtime = thisThread.seconds;
+				// wait difference to 1/fps seconds to aim for certain frame rate
+				((1/fps) - (newtime - time)).wait;
+				// (1/fps).wait;
 			});
 		});
 		^routine;
@@ -556,12 +563,16 @@ Patcher {
 
 			// main loop, send data to every device, wait a little to not lock up sc
 			inf.do{ |i|
-				time = thisThread.seconds;
-				// this.devices.do({ |dev, i|
-				// dev.buses.keysValuesDo({ |method, bus|
-						// btw: asynchronous access is way to slow as well...
+				// time = thisThread.seconds;
 
-				// dev.device.action(method, bus.getnSynchronous);
+				this.devices.do({ |dev, i|
+					dev.buses.keysValuesDo({ |method, bus|
+						// btw: asynchronous access is way to slow as well...
+						dev.device.action(method, bus.getnSynchronous);
+					});
+
+					this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
+				});
 
 						// ToDo: Reimplement this "caching" thing below
 						/**
@@ -572,23 +583,20 @@ Patcher {
 						});
 						lastval = val;
 						**/
-		// });
-
-				// this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
-		// });
 
 				this.outputDevices.do({ |device|
 					device.device.send(this.universeBuffers[device.universe]);
 				});
 
-				newtime = thisThread.seconds;
+/*				newtime = thisThread.seconds;
 				if(newtime - time < 0.1, {
 					// wait difference to 1/fps seconds to aim for certain frame rate
 					((1/fps) - (newtime - time)).wait;
 				}, {
 					"frame rate problem!".postln;
 /*					(1/fps).wait;*/
-				});
+				});*/
+				(1/fps).wait;
 			};
 		});
 		^routine;
