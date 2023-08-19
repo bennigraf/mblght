@@ -5,7 +5,8 @@
  */
 Device {
 	classvar types; // holds different types of devices
-	var <>address = 0;
+	var <>address = 1;
+	var <>universe = 0;
 	var <>type;
 	var <>dmxData;
 
@@ -490,12 +491,13 @@ Device {
 	}
 
 
-	*new { |mytype, myaddress = 0|
-		^super.new.init(mytype, myaddress);
+	*new { |mytype, myaddress = 1, myUniverse = 0 |
+		^super.new.init(mytype, myaddress, myUniverse);
 	}
-	init { | mytype, myaddress = 0 |
+	init { | mytype, myaddress = 1, myUniverse = 0 |
 		var channels;
 		address = myaddress;
+		universe = myUniverse;
 		type = mytype;
 		channels = types[type][\channels];
 		dmxData = List.newClear(channels).fill(0);

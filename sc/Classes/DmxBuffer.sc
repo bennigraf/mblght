@@ -7,6 +7,8 @@
 	  buffer: buffers dmx data (512 channels of 8bit values per universe)
 	  devices: list of output devices. Object with .send method that receives complete universe...
 */
+
+// DmxBuffer is deprecated! Don't use me! (But still use the output devices below....)
 DmxBuffer {
 
 	// some change...
@@ -230,6 +232,7 @@ OlaOsc {
 
 	send { | buffer |
 		var data = Int8Array.newFrom(buffer);
+
 		if (channelLimit < 512, {
 			data = data.copyRange(0, channelLimit - 1);
 		});

@@ -20,13 +20,16 @@ Patcher {
 	var <devices;
 	var <groups;
 	var <id;
-	var <buffers; // holds DMXBuffer objects
 	var oscfuncs;
 	var <busses;
 	var server; // holds default server since patcher uses busses!
 	var <>fps; // fps to get data from busses with
 	classvar <default; // default (usually first) Patcher...
 	classvar <all; // holds all opened patchers for reference...
+
+	var <>universeBuffers;
+	var <>outputDevices;
+	var <>runner;
 
 	var aFun; // some vegas mode...
 
@@ -60,16 +63,23 @@ Patcher {
 /*		buffer = List.newClear(512).fill(0);*/
 		devices = List();
 		groups = IdentityDictionary();
-		buffers = List();
 		busses = List();
 		server = Server.default;
-		fps = 60;
+		fps = 40;
+
+		/**
+		 Rewrite: A Patcher owns all buffers as universes and pushes their data in a loop directly
+		   out to devices, bypassing DmxBuffer
+		 **/
+		universeBuffers = Dictionary();
+		outputDevices = [];
 
 		if(default==nil, { // make this the default patcher if none is there...
 			default = this;
 		});
 		all.add(myid -> this);
 
+		"booting".postln;
 		if(myid.isKindOf(Symbol).not, {
 			"ID must be a symbol!".postln;
 			^nil;
@@ -81,6 +91,11 @@ Patcher {
 		}, {
 			server.waitForBoot();
 		});
+
+		runner = this.makeRunner();
+		runner.play();
+
+
 		// deprecate osc functionality for now...
 		/*
 		oscfuncs = List();
@@ -100,11 +115,8 @@ Patcher {
 	end {
 		// frees buses, stop routines, remove devices?
 		devices.do({ |dev|
-			dev[\routine].stop;
+			runner.stop;
 			this.freeBusesForDevice(dev);
-		});
-		buffers.size.do({
-			buffers.pop.close;
 		});
 		all.removeAt(id);
 		if((default == this) && (all.size > 0), {
@@ -116,22 +128,33 @@ Patcher {
 	}
 
 	addBuffer { |buffer|
+		"DEPRECATED! DmxBuffer doesn't work anymore, please add devices directly to the patcher with .addOutputDevice".postln;
 		// a buffer must react to the set method!
-		buffers.add(buffer);
+		// buffers.add(buffer);
 	}
-	setBuffers { |dmxData, addr|
+	setBuffers { |dmxData, universe, addr|
 /*		"trying to set data to buffers:".postln;*/
 /*		[dmxData, addr].postln;*/
-		buffers.do({ |buf|
-/*			buf.set(dmxData, addr);*/
-			buf.set(dmxData, addr - 1); // dmx starts at 1, everything else in the world at 0
+		if (addr.isNil, {
+			"Deprecated: .setBuffers now needs an universe!".postln;
 		});
 	}
-	removeBuffer { |index|
-		buffers.at(index).close();
-		buffers.removeAt(index);
+
+	setUniverseBufferData { |dmxData, universe, addr|
+		dmxData.do({ |datum, n|
+			this.universeBuffers[universe][addr - 1 + n] = datum;
+		});
 	}
 
+	addOutputDevice { |device, universe = 0|
+		var newDevice = ();
+		newDevice.device = device;
+		newDevice.universe = universe;
+		this.outputDevices = this.outputDevices.add(newDevice);
+		// Todo: Add .remove method
+	}
+
+	// universe is 0-indexed, address as well, but that lives on the device itself
 	addDevice { |myDevice, myGroup|
 		// add device to internal list of devices
 		// register OSC path/address/methods? Or pass methods to Device... better not, otherwise
@@ -140,14 +163,14 @@ Patcher {
 		var deviceNum;
 		var device = (); // holds device to add later
 		var buses; // kr-buses used for data...
-		var routine; // update-routine which calls actions periodically
+		// var routine; // update-routine which calls actions periodically
 
 		buses = this.makeBussesForDevice(myDevice);
-		routine = this.makeRoutineForDevice(myDevice, buses);
+		// routine = this.makeRoutineForDevice(myDevice, buses);
 
 		device[\device] = myDevice;
 		device[\buses] = buses;
-		device[\routine] = routine;
+		// device[\routine] = routine;
 
 		devices.add(device);
 		deviceNum = devices.size - 1;
@@ -159,10 +182,15 @@ Patcher {
 			groups[myGroup].add(device);
 		});
 
+		if (this.universeBuffers[myDevice.universe].isNil, {
+			this.universeBuffers[myDevice.universe] = Int8Array.fill(512, 0)
+		});
+
 		// call init message as default...
 		if(myDevice.hasMethod(\init), {
 			myDevice.action(\init);
-			this.setBuffers(myDevice.getDmx, myDevice.address);
+			"asdf 1".postln;
+			this.setUniverseBufferData(myDevice.getDmx, myDevice.universe, myDevice.address);
 		});
 
 		// create busses for each method, get their data in a routine or something...
@@ -186,7 +214,9 @@ Patcher {
 			bus.free;
 		});
 	}
-	makeRoutineForDevice { |device, buses|
+
+	// totally deprecated
+/*	makeRoutineForDevice { |device, buses|
 		var routine = Routine.run({
 			var val, lastval;
 			inf.do({
@@ -195,6 +225,7 @@ Patcher {
 					val = bus.getnSynchronous;
 					if(val != lastval, {
 						device.action(method, val);
+			"asdf 2".postln;
 						this.setBuffers(device.getDmx, device.address);
 					});
 					lastval = val;
@@ -203,7 +234,7 @@ Patcher {
 			});
 		});
 		^routine;
-	}
+	}*/
 
 	removeDevice { |index|
 		groups.keysValuesDo({ |grpname, devices|
@@ -405,7 +436,7 @@ Patcher {
 /*			[method, arguments].postln;*/
 			if(deviceNum < devices.size, {
 				devices[deviceNum].action(method, arguments);
-				this.setBuffers(devices[deviceNum].getDmx, devices[deviceNum].address);
+				this.setUniverseBufferData(devices[deviceNum].getDmx, devices[deviceNum].universe, devices[deviceNum].address);
 			}, {
 				"device doesn't exist in patcher!".postln;
 			});
@@ -418,7 +449,8 @@ Patcher {
 			devices.do({ |device, i|
 				if(device.hasMethod(method), {
 					device.action(method, arguments);
-					this.setBuffers(device.getDmx, device.address);
+			"asdf 4".postln;
+					this.setUniverseBufferData(device.getDmx, device.universe, device.address);
 				});
 			});
 		});
@@ -436,7 +468,7 @@ Patcher {
 		groupDevs.do({|dev, i|
 			if(dev.hasMethod(method), {
 				dev.action(method, arguments);
-				this.setBuffers(dev.getDmx, dev.address);
+				this.setUniverseBufferData(dev.getDmx, dev.universe, dev.address);
 			});
 		});
 	}
@@ -516,6 +548,51 @@ Patcher {
 		}, {
 			("Nothing found at index "+index).postln;
 		});
+	}
+
+	makeRunner {
+		var routine = Routine({
+			var time = thisThread.seconds;
+			var newtime;
+
+			// main loop, send data to every device, wait a little to not lock up sc
+			inf.do{ |i|
+				time = thisThread.seconds;
+				this.devices.do({ |dev, i|
+					dev.buses.keysValuesDo({ |method, bus|
+						// btw: asynchronous access is way to slow as well...
+
+						dev.device.action(method, bus.getnSynchronous);
+
+						// ToDo: Reimplement this "caching" thing below
+						/**
+						val = bus.getnSynchronous;
+
+						if(val != lastval, {
+						device.action(method, val);
+						});
+						lastval = val;
+						**/
+					});
+
+					this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
+				});
+
+				this.outputDevices.do({ |device|
+					device.device.send(this.universeBuffers[device.universe]);
+				});
+
+				newtime = thisThread.seconds;
+				if(newtime - time < 0.1, {
+					// wait difference to 1/fps seconds to aim for certain frame rate
+					((1/fps) - (newtime - time)).wait;
+				}, {
+					"frame rate problem!".postln;
+/*					(1/fps).wait;*/
+				});
+			};
+		});
+		^routine;
 	}
 
 
