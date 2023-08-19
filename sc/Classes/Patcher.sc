@@ -166,7 +166,7 @@ Patcher {
 		var routine; // update-routine which calls actions periodically
 
 		buses = this.makeBussesForDevice(myDevice);
-		// routine = this.makeRoutineForDevice(myDevice, buses);
+		routine = this.makeRoutineForDevice(myDevice, buses);
 
 		busCaches = Dictionary();
 		Device.types[myDevice.type].keysValuesDo({ |method|
@@ -573,7 +573,7 @@ Patcher {
 			inf.do{ |i|
 				time = thisThread.seconds;
 
-				this.devices.do({ |dev, i|
+				/*this.devices.do({ |dev, i|
 					dev.buses.keysValuesDo({ |method, bus|
 						// btw: asynchronous access is way to slow as well...
 						var vals = bus.getnSynchronous;
@@ -584,7 +584,7 @@ Patcher {
 					});
 
 					this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
-				});
+				});*/
 
 				this.outputDevices.do({ |device|
 					device.device.send(this.universeBuffers[device.universe]);
