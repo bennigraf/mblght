@@ -162,14 +162,22 @@ Patcher {
 
 		var deviceNum;
 		var device = (); // holds device to add later
-		var buses; // kr-buses used for data...
+		var buses, busCaches; // kr-buses used for data...
 		var routine; // update-routine which calls actions periodically
 
 		buses = this.makeBussesForDevice(myDevice);
 		// routine = this.makeRoutineForDevice(myDevice, buses);
 
+		busCaches = Dictionary();
+		Device.types[myDevice.type].keysValuesDo({ |method|
+			// do for each method, but omit reserved keys 'channel', 'init', 'numArgs:
+			var numArgs = Device.types[myDevice.type].numArgs[method];
+			busCaches.put(method, Array.fill(numArgs, 0));
+		});
+
 		device[\device] = myDevice;
 		device[\buses] = buses;
+		device[\busCaches] = busCaches;
 		device[\routine] = routine;
 
 		devices.add(device);
@@ -568,21 +576,15 @@ Patcher {
 				this.devices.do({ |dev, i|
 					dev.buses.keysValuesDo({ |method, bus|
 						// btw: asynchronous access is way to slow as well...
-						dev.device.action(method, bus.getnSynchronous);
+						var vals = bus.getnSynchronous;
+						if (vals != dev.busCaches[method], {
+							dev.device.action(method, vals);
+							dev.busCaches[method] = vals;
+						});
 					});
 
 					this.setUniverseBufferData(dev.device.getDmx, dev.device.universe, dev.device.address);
 				});
-
-						// ToDo: Reimplement this "caching" thing below
-						/**
-						val = bus.getnSynchronous;
-
-						if(val != lastval, {
-						device.action(method, val);
-						});
-						lastval = val;
-						**/
 
 				this.outputDevices.do({ |device|
 					device.device.send(this.universeBuffers[device.universe]);
